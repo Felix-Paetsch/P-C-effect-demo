@@ -1,7 +1,6 @@
 import { Effect } from "effect";
-import { EnvironmentT } from "../plugins/environment";
-import { plugin_request } from "../plugins/kernel_messages/plugin_request";
-import { PluginEffect } from "../plugins/plugin_effect";
+import { plugin_request } from "../plugin_lib/kernel_messages/plugin_request";
+import { PluginEffect } from "../plugin_lib/plugin_effect";
 /* 
 *  Each plugin should have all its logic inside
 *  a event listener that is run after the communication is initialized
@@ -11,6 +10,7 @@ import { PluginEffect } from "../plugins/plugin_effect";
 */
 
 const main: PluginEffect = Effect.gen(function* (_) {
+    // Environment has own address
     const res = yield* plugin_request("Plugin2");
     console.log(res);
 

@@ -1,5 +1,6 @@
-import { Json, Message } from "../../../messaging/src/base/message";
+import { Json } from "../../../messaging/src/base/message";
 import { Environment } from "../environment";
+import { RequestMessage } from "../fetch/request_message";
 
 type KernelMessageTypes = "default" | "plugin_request"
 
@@ -10,11 +11,14 @@ export class KernelMessage {
     ) { }
 
     get message() {
-        return new Message(Environment.kernel_address, {
+        return new RequestMessage(Environment.kernel_address, {
             type: this.type,
             data: this.data
         }, {
-            "message_type": "kernel_message"
+            "headers": {
+                "message_type": "library_message",
+                "library_message_type": "kernel_message"
+            }
         })
     }
 

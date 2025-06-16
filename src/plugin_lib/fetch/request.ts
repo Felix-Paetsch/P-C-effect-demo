@@ -2,12 +2,13 @@ import { Context, Effect, Either, pipe } from "effect"
 import { Message, MessageSerializationError, MessageT } from "../../../messaging/src/base/message"
 import { make_message_bidirectional } from "../../../messaging/src/middleware/bi_messages"
 import { send } from "../../../messaging/src/base/send"
-import Response from "./response/response"
+import Response from "./response"
 import { MiddlewareError } from "../../../messaging/src/base/middleware"
 import { TimeoutError } from "../../../messaging/src/middleware/bi_messages"
 import { AddressNotFoundError } from "../../../messaging/src/base/send"
 import { onErrorRetryWithOtherCommunicationChannels } from "../../../messaging/src/tools/on_message_channel_error"
 import { NoValidCommunicationChannelsError } from "../../../messaging/src/base/communication_channels"
+import { RequestMessageT } from "./request_message"
 
 export type RequestMessageData = {
     message: Message,
@@ -26,14 +27,18 @@ export class RequestMessageDataT
 export default class Request {
     constructor() { }
 
-    static send_custom_message =
+    static send_message =
         Effect.gen(function* (_) {
-            const msg: Message = yield* _(MessageT);
+            const msg: Message = yield* _(RequestMessageT);
             const responseE = make_message_bidirectional(msg);
 
             const either = yield* _(Effect.all([
                 pipe(
                     send,
+                    Effect.provideServiceEffect(
+                        MessageT,
+                        RequestMessageT
+                    ),
                     onErrorRetryWithOtherCommunicationChannels
                 ),
                 responseE
@@ -45,8 +50,6 @@ export default class Request {
             return yield* _(Response.from_request_message({
                 message: msg,
                 response: either
-            }, {
-                from_custom_request: true
             }));
         })
 }

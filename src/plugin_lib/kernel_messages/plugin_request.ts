@@ -1,14 +1,35 @@
 import { Effect, pipe } from "effect"
-import { Json, MessageT } from "../../../messaging/src/base/message"
+import { Json } from "../../../messaging/src/base/message"
 import { KernelMessage } from "./index"
 import Request from "../fetch/request"
+import { RequestMessageT, toStringJsonRecord } from "../fetch/request_message"
+import { MessagePartner } from "../message_partner"
+import { Option } from "effect"
+import { MalformattedResponseError, PossibleResponseError } from "../fetch/response"
 
 export type plugin_ident = string | { [key: string]: Json }
 export const plugin_request = (plugin_ident: plugin_ident) =>
-    Request.send_custom_message.pipe(Effect.provideServiceEffect(
-        MessageT,
-        pipe(
-            Effect.succeed(new KernelMessage("plugin_request", plugin_ident).message)
-        )
-    ))
-// TODO: Process Response
+    Request.send_message.pipe(
+        Effect.provideServiceEffect(
+            RequestMessageT,
+            pipe(
+                Effect.succeed(new KernelMessage("plugin_request", plugin_ident).message)
+            )
+        ),
+        Effect.andThen(
+            response => response.body.pipe(
+                Effect.orElseFail(() => response.err.pipe(
+                    Option.getOrThrow
+                ))
+            )
+        ),
+        Effect.andThen(
+            toStringJsonRecord(error => new MalformattedResponseError({
+                error_message: "Invalid response body",
+                error: error
+            }) as PossibleResponseError)
+        ),
+        Effect.andThen(body => MessagePartner.from_json(
+            body.plugin_partner_ident
+        ))
+    )
