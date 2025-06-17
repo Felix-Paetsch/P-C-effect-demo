@@ -1,4 +1,4 @@
-import { Context, Effect, Schema } from "effect";
+import { Context, Effect, ParseResult, Schema } from "effect";
 import { Address } from "../../../messaging/src/base/address";
 import { CommunicationChannel } from "../../../messaging/src/base/communication_channels";
 import { Json, Message } from "../../../messaging/src/base/message";
@@ -21,7 +21,7 @@ export class RequestMessage extends Message {
     }
 }
 
-export const toStringJsonRecord = (err_fun: (error: Error) => Error) =>
+export const toStringJsonRecord = <E extends Error>(err_fun: (error: ParseResult.ParseError) => E) =>
     (body: Json) => Schema.decodeUnknown(
         Schema.Record({
             key: Schema.String,

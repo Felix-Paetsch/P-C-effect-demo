@@ -10,7 +10,6 @@ import { PluginEffect } from "../plugin_lib/plugin_effect";
 */
 
 const main: PluginEffect = Effect.gen(function* (_) {
-    // Environment has own address
     const res = yield* plugin_request("Plugin2");
     console.log(res);
 
