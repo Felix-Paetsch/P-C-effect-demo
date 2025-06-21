@@ -28,7 +28,7 @@ export const toStringJsonRecord = <E extends Error>(err_fun: (error: ParseResult
             value: Schema.Any
         })
     )(body).pipe(
-        Effect.catchAll(
-            error => Effect.fail(err_fun(error))
+        Effect.mapError(
+            error => err_fun(error)
         )
     )

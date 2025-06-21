@@ -41,7 +41,7 @@ export const plugin_request = (plugin_ident: plugin_ident) =>
             error_message: "Invalid message partner",
             error: error
         }) as PossibleResponseError)),
-        Effect.catchAll(error => Effect.fail(new PluginRequestError({
+        Effect.mapError(error => new PluginRequestError({
             error: error
-        })))
+        }))
     )

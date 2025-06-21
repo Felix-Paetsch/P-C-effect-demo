@@ -3,7 +3,7 @@ import { Json } from "../../../messaging/src/base/message"
 import { Address, SerializedAddress } from "../../../messaging/src/base/address"
 import { OutgoingMessageEndpoint } from "./outgoing_message_endpoint";
 import { Environment, EnvironmentT } from "../environment";
-import { IncommingMessageEndpoint } from "./incomming_message_endpoint";
+import { incomingMessageEndpoint } from "./incoming_message_endpoint";
 
 class MessageEndpointDeserializationError extends Data.TaggedError("MessageEndpointDeserializationError")<{
     error: Error;
@@ -13,8 +13,6 @@ class MessageEndpointDeserializationError extends Data.TaggedError("MessageEndpo
  * 
  * How to initializa a message partner on the other side?
  * 
- * 
- * - List of message partners
  * - Establish bidirectional connection // should be a custom message
  * - Send message
  * - Receive message
@@ -41,9 +39,9 @@ export class MessageEndpoint {
         return Effect.succeed(new OutgoingMessageEndpoint(this.address, this.id))
     }
 
-    get to_incomming_message_endpoint() {
+    get to_incoming_message_endpoint() {
         return EnvironmentT.pipe(
-            Effect.andThen(env => Effect.succeed(new IncommingMessageEndpoint(env, this.id)))
+            Effect.andThen(env => Effect.succeed(new incomingMessageEndpoint(env, this.id)))
         )
     }
 

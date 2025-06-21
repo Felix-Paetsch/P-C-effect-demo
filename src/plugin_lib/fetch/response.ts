@@ -72,11 +72,11 @@ const minimal_response_message_meta_data = (to_parse: unknown) => Schema.decodeU
         })
     })
 )(to_parse).pipe(
-    Effect.catchAll(
-        (error) => Effect.fail(new MalformattedResponseError({
+    Effect.mapError(
+        (error) => new MalformattedResponseError({
             error_message: "Invalid meta data",
             error: error
-        }))
+        })
     )
 )
 
@@ -132,10 +132,10 @@ export default class Response {
             Effect.catchTag(
                 // Triggered by computing "body"
                 "MessageDeserializationError",
-                (err) => Effect.fail(new MalformattedResponseError({
-                    error_message: "Invalid response message",
+                (err) => new MalformattedResponseError({
+                    error_message: "Invalid response message body",
                     error: err
-                }))
+                })
             ),
             Effect.catchAll(
                 (err) => error_to_response(request_data, err, options)

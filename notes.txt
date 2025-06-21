@@ -1,3 +1,28 @@
+CleanUp
+On Unresponsive msg (?)
+        Invalidate Env 
+
+Notes
+
+- Effect likes factories-ish more than classes
+=================
+
+Todo
+
+- Remove the posibility for several communication channels
+=> "User" can handle this later
+- Test Ping
+
+=================
+Questions
+
+Environments?
+Where do certain middlewares live? Especially for sending => Prefered CommunicationChannel(?)
+How to see if unidirectional messages made it through after the first Channel?
+Trying different communication channels if they didn't? (Why do we even have different comm. channels then...)
+
+=================
+
 Already here/the same:
 
 - open communication channel
