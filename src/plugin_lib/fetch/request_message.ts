@@ -1,6 +1,5 @@
 import { Context, Effect, ParseResult, Schema } from "effect";
 import { Address } from "../../../messaging/src/base/address";
-import { CommunicationChannel } from "../../../messaging/src/base/communication_channels";
 import { Json, Message } from "../../../messaging/src/base/message";
 
 export class RequestMessageT extends Context.Tag("RequestMessageT")<RequestMessageT, RequestMessage>() { }
@@ -14,10 +13,9 @@ export class RequestMessage extends Message {
                 [key: string]: string
             },
             [key: string]: Json
-        },
-        public prefered_communication_channel: CommunicationChannel | null = null
+        }
     ) {
-        super(target, content, meta_data, prefered_communication_channel);
+        super(target, content, meta_data);
     }
 }
 
