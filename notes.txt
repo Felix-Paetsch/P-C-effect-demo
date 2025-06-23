@@ -2,9 +2,15 @@ CleanUp
 On Unresponsive msg (?)
         Invalidate Env 
 
-Notes
+[[[[[ Notes ]]]]]
 
 - Effect likes factories-ish more than classes
+- Reduce Side Effects / Encapsulate them properly
+- Immutability
+- Rethink requirements
+- Use more Effect knowledge
+
+Q: How to do servers in Effect7F#
 =================
 
 Todo

@@ -1,7 +1,6 @@
 import { TransmittableMessage, Json } from "../../../messaging/src/base/message";
 import { Address } from "../../../messaging/src/base/address";
 import { Middleware } from "../../../messaging/src/base/middleware";
-import { UUID } from "../../../messaging/src/base/uuid";
 
 export function openCommunicationChannel(
     // The address you provide communication to
@@ -17,5 +16,5 @@ export function openCommunicationChannel(
 ) { }
 
 export function setLocalAddress(
-    local: UUID
+    local: string
 ) { }
