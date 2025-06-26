@@ -1,5 +1,5 @@
 import { Effect, Schema } from "effect";
-import { Protocol, ProtocolError, ProtocolErrorN, ProtocolErrorR, ProtocolMessage, ProtocolMessageT } from "../../../../../messaging/src/protocols/protocol";
+import { ProtocolErrorN, ProtocolErrorR, ProtocolMessage } from "../../../../../messaging/src/protocols/protocol";
 import { MessagePartnerObject, MessagePartnerObjectIdent } from "../../message_partner_object";
 import { Json } from "../../../../../messaging/src/base/message";
 import { MessagePartnerObjectCommunication } from "../messaging_protocol/message_partner_object_communication";
@@ -12,33 +12,13 @@ export class MPOProtocolErrorN extends ProtocolErrorN {
         message: string,
         data?: Json,
         error?: Error,
-        readonly internal_message?: InternalMessage | ProtocolMessage
+        readonly Message?: InternalMessage | ProtocolMessage
     }) {
         super({
             message: args.message,
             data: args.data,
             error: args.error,
-            protocol_message: (args.internal_message as any)?.pm || args.internal_message
-        });
-    }
-
-    static from_protocol_error(e: ProtocolError, internal_message?: InternalMessage | ProtocolMessage): MPOProtocolError {
-        if (e instanceof MPOProtocolErrorR || e instanceof MPOProtocolErrorN) {
-            return e;
-        }
-        if (e instanceof ProtocolErrorR) {
-            return new MPOProtocolErrorR({
-                message: e.message,
-                data: e.data,
-                error: e.error,
-                internal_message: internal_message || e.protocol_message!
-            });
-        }
-        return new MPOProtocolErrorN({
-            message: e.message,
-            data: e.data,
-            error: e.error,
-            internal_message: internal_message
+            Message: (args.Message as any)?.pm || args.Message
         });
     }
 }
@@ -54,15 +34,31 @@ export class MPOProtocolErrorR extends ProtocolErrorR {
             message: args.message,
             data: args.data,
             error: args.error,
-            protocol_message: (args.internal_message as any)?.pm || args.internal_message
+            Message: (args.internal_message as any)?.pm || args.internal_message
         });
     }
+}
 
-    static from_protocol_error = MPOProtocolErrorN.from_protocol_error;
+export function to_mpo_protocol_error(e: Error, msg?: InternalMessage): MPOProtocolError {
+    if (e instanceof ProtocolErrorR && msg) {
+        return new MPOProtocolErrorR({
+            message: e.message,
+            error: e,
+            data: e.data,
+            internal_message: msg
+        })
+    }
+
+    return new MPOProtocolErrorN({
+        message: e.message,
+        error: e,
+        data: (e as any).data || undefined,
+        Message: msg?.pm
+    })
 }
 
 // A protocol to run on one message partner that communicates with its associated message partner
-export class MPOProtocol<SenderResult, ReceiverResult> {
+export abstract class MPOProtocol<SenderResult, ReceiverResult> {
     constructor(
         readonly name: string,
         readonly version: string,

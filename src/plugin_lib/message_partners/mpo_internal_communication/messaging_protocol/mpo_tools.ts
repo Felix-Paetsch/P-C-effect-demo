@@ -18,7 +18,7 @@ export const get_mpo_protocol_data = Effect.gen(function* (_) {
         return yield* Effect.fail(new ProtocolErrorR({
             message: "Invalid request",
             error: e,
-            protocol_message: yield* _(ProtocolMessageT)
+            Message: yield* _(ProtocolMessageT)
         }))
     }))
 )
@@ -30,7 +30,7 @@ export function get_message_partner(msg_partner_ident: string): Effect.Effect<Me
             return yield* Effect.fail(new ProtocolErrorR({
                 message: MessagePartnerNotFoundMessage,
                 error: e,
-                protocol_message: yield* _(ProtocolMessageT)
+                Message: yield* _(ProtocolMessageT)
             }))
         })),
         Protocol.fail_with_response
@@ -44,7 +44,7 @@ export function get_message_partner_object(msg_partner_ident: MessagePartnerObje
             return yield* Effect.fail(new ProtocolErrorR({
                 message: MessagePartnerObjectNotFoundMessage,
                 error: e,
-                protocol_message: yield* _(ProtocolMessageT)
+                Message: yield* _(ProtocolMessageT)
             }))
         })),
     )
@@ -56,7 +56,7 @@ export function guard_mpo_still_active(mpo: MessagePartnerObject): Effect.Effect
             const err = new ProtocolErrorR({
                 message: MessagePartnerGotRemovedMessage,
                 error: new Error(MessagePartnerGotRemovedMessage),
-                protocol_message: yield* _(ProtocolMessageT)
+                Message: yield* _(ProtocolMessageT)
             });
             return yield* Effect.fail(err);
         }

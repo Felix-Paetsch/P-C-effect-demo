@@ -1,9 +1,10 @@
 import { Context, Effect, pipe, Schema } from "effect";
 import { Json } from "../../../../messaging/src/base/message";
-import { ProtocolError, ProtocolErrorN, ProtocolMessage, ProtocolMessageT } from "../../../../messaging/src/protocols/protocol";
+import { ProtocolError, ProtocolMessage, ProtocolMessageT } from "../../../../messaging/src/protocols/protocol";
 import { MessagePartnerObject } from "../message_partner_object";
 import { guard_mpo_still_active, get_mpo_protocol_data } from "./messaging_protocol/mpo_tools";
 import { MPOProtocolDataSchema } from "./messaging_protocol/message_partner_object_communication";
+import { MPOProtocolError, to_mpo_protocol_error } from "./mpo_protocols/mpo_protocol";
 
 export class InternalMessage {
     constructor(
@@ -13,7 +14,7 @@ export class InternalMessage {
         readonly mpo_protocol_name: string
     ) { }
 
-    respond(data: Json = null): Effect.Effect<InternalMessage, ProtocolError> {
+    respond(data: Json = null): Effect.Effect<InternalMessage, MPOProtocolError> {
         const self = this;
         return this.pm.respond(Schema.encodeSync(MPOProtocolDataSchema)({
             mpo_ident: self.mpo.ident,
@@ -23,12 +24,7 @@ export class InternalMessage {
             Effect.andThen(pme => InternalMessage.FromProtocolMessageEffect(
                 pme, self.mpo, self.mpo_protocol_name
             )),
-            Effect.catchAll(e => Effect.gen(function* (_) {
-                return yield* Effect.fail(new ProtocolErrorN({
-                    message: "Failed to respond to internal message",
-                    error: e
-                }))
-            }))
+            Effect.mapError(e => to_mpo_protocol_error(e, self))
         )
     }
 

@@ -1,3 +1,12 @@
+# Error guidelines
+
+new Error({
+message?: string,
+error?: Error,
+data?: Json,
+Message?: Message
+})
+
 # BugFix:
 
 Todo:
@@ -9,7 +18,7 @@ Todo:
 -   asynmmetric MPO?
 -   Implement "Ping" one level higher (; Basically a user should also have access to request/respond like I do (outside of any fetch implementation)
 -   Better errors
-    -   Test if - with protocolls - we responded with an actual correct (acceptable) error
+    -   Test if - with protocols - we responded with an actual correct (acceptable) error
     -   Move more things to invalid message format error
     -   Send the correct errors
     -   SendFirstMessage should have same error as subsequent messages -> Protocoll error, right
@@ -23,8 +32,6 @@ Todo:
 -   Get rid of MPO protocol (?)
 -   move "Json" somewhere else
 -   do i really want Protocol Shadowed?
-    -   Handle MPO errors
-    -   Propagate MPO errors up correctly
     -   Better MPO tools (?)
 
 # Todo

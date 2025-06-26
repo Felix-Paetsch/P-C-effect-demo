@@ -1,6 +1,7 @@
 import { Schema, Effect, Data, Option, pipe, Either } from "effect";
 import { Message, Json } from "../../../messaging/src/base/message";
 import { RequestMessageData } from "./request";
+import { StdMessagingErrorI } from "../../../messaging/src/base/errors/common";
 
 const Error_Response_Statuses = {
     // Server error
@@ -50,13 +51,16 @@ type response_data = {
 }
 
 export class MalformattedResponseError extends Data.TaggedError("MalformattedResponseError")<{
-    error_message: string;
+    message: string;
     error: Error;
+    Message?: Message
 }> { }
 
 export class ReceivedErrorResponse extends Data.TaggedError("ReceivedErrorResponse")<{
-    error_message: string;
-    status: ResponseStatus;
+    message: string;
+    data: {
+        response_status: ResponseStatus;
+    };
     error: Error;
 }> { }
 
@@ -74,7 +78,7 @@ const minimal_response_message_meta_data = (to_parse: unknown) => Schema.decodeU
 )(to_parse).pipe(
     Effect.mapError(
         (error) => new MalformattedResponseError({
-            error_message: "Invalid meta data",
+            message: "Invalid meta data",
             error: error
         })
     )
@@ -113,8 +117,8 @@ export default class Response {
                 Object.values(Error_Response_Statuses).includes(parsed_meta_data.status as any)
             ) {
                 yield* Effect.fail(new ReceivedErrorResponse({
-                    error_message: parsed_meta_data.error || "Unknown error",
-                    status: parsed_meta_data.status,
+                    message: parsed_meta_data.error || "Unknown error",
+                    data: { response_status: parsed_meta_data.status },
                     error: new Error("Response had an error")
                 }))
             }
@@ -133,7 +137,7 @@ export default class Response {
                 // Triggered by computing "body"
                 "MessageDeserializationError",
                 (err) => new MalformattedResponseError({
-                    error_message: "Invalid response message body",
+                    message: "Invalid response message body",
                     error: err
                 })
             ),

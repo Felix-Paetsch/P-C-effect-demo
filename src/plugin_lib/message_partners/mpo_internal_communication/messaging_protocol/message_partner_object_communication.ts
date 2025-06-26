@@ -2,12 +2,12 @@ import { Effect, Schema } from "effect";
 
 import { Json } from "../../../../../messaging/src/base/message";
 import { InternalMessage, InternalMessageT } from "../internal_message";
-import { ProtocolError, ProtocolErrorN, ProtocolMessageT } from "../../../../../messaging/src/protocols/protocol";
+import { ProtocolError, ProtocolMessageT } from "../../../../../messaging/src/protocols/protocol";
 import { MessagePartnerObject, MessagePartnerObjectIdentStruct } from "../../message_partner_object";
 import { EnvironmentT } from "../../../../../messaging/src/base/environment";
 import { get_mpo_protocol_data, get_message_partner_object } from "./mpo_tools";
 import { Protocol } from "../../../../../messaging/src/protocols/protocol";
-import { MPOProtocol } from "../mpo_protocols/mpo_protocol";
+import { MPOProtocol, to_mpo_protocol_error } from "../mpo_protocols/mpo_protocol";
 
 export const MPOProtocolDataSchema = Schema.Struct({
     mpo_ident: MessagePartnerObjectIdentStruct,
@@ -51,12 +51,7 @@ class MessagePartnerObjectCommunicationProtocol extends Protocol<InternalMessage
                 );
             })),
             Effect.andThen(pme => InternalMessage.FromProtocolMessageEffect(pme, mpo, mpo_protocol_name)),
-            Effect.catchAll(e => Effect.gen(function* (_) {
-                return yield* Effect.fail(new ProtocolErrorN({
-                    message: "Failed to create internal message",
-                    error: e
-                }))
-            }))
+            Effect.mapError(e => to_mpo_protocol_error(e))
         )
     }
 
