@@ -1,0 +1,162 @@
+# BugFix:
+
+Todo:
+
+-   Generalize the "on" methods
+-   Generalize Bridge & MP
+
+-   Go through all effect .orDie // ignore
+-   asynmmetric MPO?
+-   Implement "Ping" one level higher (; Basically a user should also have access to request/respond like I do (outside of any fetch implementation)
+-   Better errors
+    -   Test if - with protocolls - we responded with an actual correct (acceptable) error
+    -   Include Messages whenever they exist
+    -   Move more things to invalid message format error
+    -   Send the correct errors
+    -   SendFirstMessage should have same error as subsequent messages -> Protocoll error, right
+    -   Check i.g. error types of protocols
+-   On Callback
+-   Unify Casing
+-   Unify if schemas live as const or static members
+-   Set and overwrite local computed message data correctly
+-   Get rid of the flying around evironment dependencies; assuming env stays the same and - at most - deactivates!!!!
+-   Get rid of MPO protocol (?)
+-   move "Json" somewhere else
+-   do i really want Protocol Shadowed?
+
+# Todo
+
+-   Build bridge
+-   Clean Up
+-   How to do "on" for protocolls correctly?
+
+-   Debug
+-   Handle (log) the (currently) ignore wrong message format errors and the other errors
+
+-   Docs
+-   Flat errors
+
+# MaybeTodo
+
+-   Propagate errors back up
+-   higher order middleware
+-   Allow several communication channels (i.e. a wrapper channel) which implements retries, ...
+-   Allow for a bridge to another endpoint, so we don't need to know the Address correctly. Maybe something like a "\*"
+
+# Notes on Effect
+
+-   Effect likes factories-ish more than classes
+-   Few sideeffects & immutability
+-   Effect has a learning curve
+-   Schemas are awesome
+-   Classe: self.seminglystaticstuff => Allow for effects to have arguments other than requirements or fun arguments
+
+# Questions
+
+-   Should Middleware be able to throw errors?
+-   What to do with generic (error)listeners?
+-   What to do with environment inactive errors?
+-   How to generalize message_parner_protocols
+-   What to do against double responses on protocols?
+
+# To research
+
+-   How to do servers in Effect, F# and functional programming?
+
+# Axioms
+
+-   All middleware should be
+    a) Side-Effectless (except editing message)
+    or
+    b) Be fine if there is no future message that something failed
+
+-   MW may don't have Errors?
+-   What errors can MW even have reasonably?
+
+*   Invalid Message Format
+*   smth smth not found
+
+xxxxxxxxxxxxxxxxxxxxxxxxxx
+xxxxxxxxxxxxxxxxxxxxxxxxxx
+xxxxxxxxxxxxxxxxxxxxxxxxxx
+xxxxxxxxxxxxxxxxxxxxxxxxxx
+
+Already here/the same:
+
+-   open communication channel
+-   parts of client
+
+Difference:
+
+-   current kernel emposes queus
+-   difference workload/message // Nachrichten Modell
+
+-   3rd party / encryption / security / Datentransfer
+
+2 Points:
+
+Unsere Prios sollten sein
+
+-   größter Mehrwert ist Infrastruktur / Entwicklern Last abnehmen
+    ----> Infra / Security / Payments
+-   Infra: Nur frontend für Plugins, ein paar APIs von uns nutzen und ein paar Optionen bei uns setzten
+-   3rd Party!
+    (machen vor: große Daten austauschen)
+
+Queus etc. nicht erwähnt
+/////////////////////////
+
+-   altes System als OptIn möglich
+-   Geschindigkeit
+-   Es wird mir Komplexität induziert
+
+-   We cant control people stop computations
+-   Responsiveness
+
+Teile unserer Struktur nicht mehr emposen
+-> Was ist die Alternative?
+Probleme:
+Debugging, Mental Model for Developer
+=> Sync code der zuende läuft, Einheit an Code der am Stück zuende läuft
+
+-   DOM events
+-   Viel async wird versteckt
+-   zu viel Komplexität?
+-   Interne Komplexität vs overaching Komplexität
+
+###########
+Notes:
+Versioning
+
+###########
+Benutzung von Blockern:
+Long long await
+for deleting something
+
+###########
+Debugging:
+
+-   Pausieren
+-   Step through!
+-   Replay (with send Messages?)
+
+Von wem erwartet man Nachrichten
+~ visualisierung(?)
+Graphen w/ edges and what is transported along these edges
+
+Idee von Schaltkreisen - Abläufe die verteilt funktionieren
+~> Add "logging line"
+
+Concept of Message chain!
+
+====
+
+Lsg für Debugging/Testing
+
+Kernel in End-to-End Situation mit Plugin verbinden
+(aussuchen was "Plugin" überhaupt ist ~ vernetzung)
+Test/Debug demonstrieren
+
+Momentan testen: Record Ablauf; Playwrite
+
+-   deterministisch

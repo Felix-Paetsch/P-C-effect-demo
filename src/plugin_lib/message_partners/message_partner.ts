@@ -1,0 +1,75 @@
+import { Context, Effect, Option } from "effect";
+import { Address } from "../../../messaging/src/base/address";
+import { v4 as uuidv4 } from "uuid";
+import { Ping } from "./mpo_internal_communication/mpo_protocols/ping";
+import { collection_middleware } from "../../../messaging/src/middleware/collection";
+import { Environment } from "../../../messaging/src/base/environment";
+import { MessagePartnerObject } from "./message_partner_object";
+
+export class MessagePartner extends MessagePartnerObject {
+    static message_partners: MessagePartner[] = [];
+    static get_message_partner(uuid: string): Option.Option<MessagePartner> {
+        if (uuid.endsWith("_1")) {
+            uuid = uuid.slice(0, -2) + "_2";
+        } else if (uuid.endsWith("_2")) {
+            uuid = uuid.slice(0, -2) + "_1";
+        }
+
+        return Option.fromNullable(MessagePartner.message_partners.find(
+            mp => mp.uuid === uuid && !mp.is_removed()
+        ));
+    }
+
+    private message_partner_objects: MessagePartnerObject[] = [];
+    constructor(
+        readonly address: Address,
+        protected _uuid: string = uuidv4()
+    ) {
+        super(null as any, _uuid);
+        this._message_partner = this;
+
+        // Todo: What is accidentally we created it multiple times at the same place?
+        const existing_mp = MessagePartner.get_message_partner(this._uuid);
+        if (Option.isSome(existing_mp)) {
+            existing_mp.value._uuid = this._uuid + "_1";
+            this._uuid = this._uuid + "_2";
+        }
+
+        MessagePartner.message_partners.push(this);
+    }
+
+    get_message_partner_object(uuid: string): Option.Option<MessagePartnerObject> {
+        if (uuid.endsWith("_1")) {
+            uuid = uuid.slice(0, -2) + "_2";
+        } else if (uuid.endsWith("_2")) {
+            uuid = uuid.slice(0, -2) + "_1";
+        }
+
+        if (this.uuid === uuid) {
+            return Option.some(this);
+        }
+
+        return Option.fromNullable(this.message_partner_objects.find(
+            mp => mp.uuid === uuid
+        ));
+    }
+
+    /*
+    
+        bridge(): Effect.Effect<Bridge, ProtocolError, EnvironmentT> {
+    
+        }
+        on_bridge() { }
+    
+        branch() { }
+        on_branch() { }
+    
+        signal() { }
+        on_signal() { }
+    
+        remove() { }
+        on_remove() { }
+    */
+}
+
+export class MessagePartnerT extends Context.Tag("MessagePartnerT")<MessagePartnerT, MessagePartner>() { }

@@ -3,29 +3,24 @@ import { PluginEffect } from "./plugin_lib/plugin_effect";
 import { Effect, Either } from "effect";
 import { createLocalEnvironment } from "../messaging/src/base/environment";
 import { LocalAddress } from "../messaging/src/base/address";
-import { MessagePartner } from "./plugin_lib/message_partners/message_partner";
-import { MessagePartnerObjectCommunication } from "./plugin_lib/message_partners/mpo_internal_communication/message_partner_object_communication";
-
-// const mp1 = new MessagePartner(new LocalAddress("plugin2"), "test_1");
-const mp2 = new MessagePartner(new LocalAddress("plugin1"), "test_2"); //, mp1.uuid);
+import { Ping } from "../messaging/src/protocols/ping";
 
 const plugin1: PluginEffect = Effect.gen(function* (_) {
     const env = yield* _(EnvironmentT);
-    yield* env.useMiddleware(yield* MessagePartnerObjectCommunication.middleware(env));
-
-    // ===============================================================
+    yield* env.useMiddleware(yield* Ping.middleware(env));
 });
 
 const plugin2: PluginEffect = Effect.gen(function* (_) {
     const env = yield* _(EnvironmentT);
-    yield* env.useMiddleware(yield* MessagePartnerObjectCommunication.middleware(env));
+    yield* env.useMiddleware(yield* Ping.middleware(env));
 
-    // ===============================================================
-    const a = yield* mp2.is_alive();
+    const plugin1_address = new LocalAddress("plugin1");
+    const a = yield* Ping.run(plugin1_address);
+
     if (Either.isLeft(a)) {
-        console.log("LEFT", a.left);
+        console.log("PING FAILED", a.left);
     } else {
-        console.log(a.right);
+        console.log("PING SUCCESSFUL", a.right);
     }
 });
 
