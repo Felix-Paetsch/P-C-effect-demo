@@ -10,11 +10,11 @@ Todo:
 -   Implement "Ping" one level higher (; Basically a user should also have access to request/respond like I do (outside of any fetch implementation)
 -   Better errors
     -   Test if - with protocolls - we responded with an actual correct (acceptable) error
-    -   Include Messages whenever they exist
     -   Move more things to invalid message format error
     -   Send the correct errors
     -   SendFirstMessage should have same error as subsequent messages -> Protocoll error, right
     -   Check i.g. error types of protocols
+    -   Automatically add as much data on error as possible
 -   On Callback
 -   Unify Casing
 -   Unify if schemas live as const or static members
@@ -23,6 +23,9 @@ Todo:
 -   Get rid of MPO protocol (?)
 -   move "Json" somewhere else
 -   do i really want Protocol Shadowed?
+    -   Handle MPO errors
+    -   Propagate MPO errors up correctly
+    -   Better MPO tools (?)
 
 # Todo
 

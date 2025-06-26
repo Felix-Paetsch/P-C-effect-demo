@@ -9,7 +9,7 @@ export const MessagePartnerObjectIdentStruct = Schema.Struct({
 export type MessagePartnerObjectIdent = Schema.Schema.Type<typeof MessagePartnerObjectIdentStruct>;
 
 export class MessagePartnerObject {
-    private removed: boolean = false;
+    protected removed: boolean = false;
     constructor(
         protected _message_partner: MessagePartner,
         protected _uuid: string
@@ -31,7 +31,7 @@ export class MessagePartnerObject {
     }
 
     is_removed(): boolean {
-        return this.removed;
+        return this.removed || this.message_partner.is_removed();
     }
 
     static MessagePartnerObjectFromIdent = Schema.transformOrFail(

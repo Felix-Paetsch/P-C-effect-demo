@@ -1,9 +1,8 @@
 import { Effect, pipe, Schema } from "effect";
 import { ProtocolErrorR, ProtocolMessageT } from "../../../../../messaging/src/protocols/protocol";
 import { MessagePartner } from "../../message_partner";
-import { MessagePartnerObject } from "../../message_partner_object";
+import { MessagePartnerObject, MessagePartnerObjectIdent } from "../../message_partner_object";
 import { Protocol } from "../../../../../messaging/src/protocols/protocol";
-import { MessagePartnerObjectIdent } from "../../message_partner_object";
 import { ProtocolError } from "../../../../../messaging/src/protocols/protocol";
 import { MPOProtocolDataSchema } from "./message_partner_object_communication";
 

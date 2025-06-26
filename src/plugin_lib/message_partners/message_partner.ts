@@ -1,9 +1,6 @@
 import { Context, Effect, Option } from "effect";
 import { Address } from "../../../messaging/src/base/address";
 import { v4 as uuidv4 } from "uuid";
-import { Ping } from "./mpo_internal_communication/mpo_protocols/ping";
-import { collection_middleware } from "../../../messaging/src/middleware/collection";
-import { Environment } from "../../../messaging/src/base/environment";
 import { MessagePartnerObject } from "./message_partner_object";
 
 export class MessagePartner extends MessagePartnerObject {
@@ -36,6 +33,10 @@ export class MessagePartner extends MessagePartnerObject {
         }
 
         MessagePartner.message_partners.push(this);
+    }
+
+    is_removed(): boolean {
+        return this.removed;
     }
 
     get_message_partner_object(uuid: string): Option.Option<MessagePartnerObject> {
