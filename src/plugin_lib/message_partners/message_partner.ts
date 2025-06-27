@@ -2,6 +2,8 @@ import { Context, Effect, Option } from "effect";
 import { Address } from "../../../messaging/src/base/address";
 import { v4 as uuidv4 } from "uuid";
 import { MessagePartnerObject } from "./message_partner_object";
+// Import protocol to ensure methods and properties are added to the prototype
+import "./mpo_internal_communication/mpo_protocols/create_mpos/protocol";
 
 export class MessagePartner extends MessagePartnerObject {
     static message_partners: MessagePartner[] = [];

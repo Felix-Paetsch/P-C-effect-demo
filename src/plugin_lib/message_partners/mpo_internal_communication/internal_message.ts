@@ -28,6 +28,7 @@ export class InternalMessage {
         )
     }
 
+    // When processing a internal message it is guaranteed that the mpo is still active
     static FromProtocolMessageEffect(
         pme: Effect.Effect<ProtocolMessage, ProtocolError>,
         mpo: MessagePartnerObject,

@@ -53,7 +53,7 @@ export function to_mpo_protocol_error(e: Error, msg?: InternalMessage): MPOProto
         message: e.message,
         error: e,
         data: (e as any).data || undefined,
-        Message: msg?.pm
+        Message: msg
     })
 }
 

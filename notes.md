@@ -1,19 +1,9 @@
-# Error guidelines
-
-new Error({
-message?: string,
-error?: Error,
-data?: Json,
-Message?: Message
-})
-
-# BugFix:
-
-Todo:
+# Todo:
 
 -   Generalize the "on" methods
 -   Generalize Bridge & MP
 
+-   Unify the syntax for on callbacks and stuff, registering...
 -   Go through all effect .orDie // ignore
 -   asynmmetric MPO?
 -   Implement "Ping" one level higher (; Basically a user should also have access to request/respond like I do (outside of any fetch implementation)
@@ -29,10 +19,7 @@ Todo:
 -   Unify if schemas live as const or static members
 -   Set and overwrite local computed message data correctly
 -   Get rid of the flying around evironment dependencies; assuming env stays the same and - at most - deactivates!!!!
--   Get rid of MPO protocol (?)
 -   move "Json" somewhere else
--   do i really want Protocol Shadowed?
-    -   Better MPO tools (?)
 
 # Todo
 

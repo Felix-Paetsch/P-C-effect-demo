@@ -9,6 +9,9 @@ export const MessagePartnerObjectIdentStruct = Schema.Struct({
 export type MessagePartnerObjectIdent = Schema.Schema.Type<typeof MessagePartnerObjectIdentStruct>;
 
 export class MessagePartnerObject {
+    remove() {
+        throw new Error("Method not implemented.");
+    }
     protected removed: boolean = false;
     constructor(
         protected _message_partner: MessagePartner,
@@ -51,6 +54,10 @@ export class MessagePartnerObject {
             ))
         }
     );
+
+    static fromExistingMessagePartnerObject(mpo: MessagePartnerObject, uuid: string) {
+        return new this(mpo.message_partner, uuid);
+    }
 
     /*
     protected internally_send_message(message: Json) {
