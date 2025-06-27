@@ -1,7 +1,7 @@
 import { Context, Effect, pipe, Schema } from "effect";
-import { Json } from "../../../../messaging/src/base/message";
-import { ProtocolError, ProtocolMessage, ProtocolMessageT } from "../../../../messaging/src/protocols/protocol";
-import { MessagePartnerObject } from "../message_partner_object";
+import { Json } from "../../../../../messaging/src/base/message";
+import { ProtocolError, ProtocolMessage, ProtocolMessageT } from "../../../../../messaging/src/protocols/protocol";
+import { MessagePartnerObject } from "../../message_partner_object";
 import { guard_mpo_still_active } from "./tools";
 import { CommunicationError, getInternalMessageProtocolData, InternalMessageProtocolDataSchema, to_internal_message_protocol_error } from "./protocol";
 
@@ -10,18 +10,18 @@ export class InternalMessage {
         readonly pm: ProtocolMessage,
         readonly mpo: MessagePartnerObject,
         readonly data: Json,
-        readonly mpo_protocol_name: string
+        readonly protocol: string
     ) { }
 
-    respond(data: Json = null): Effect.Effect<InternalMessage, CommunicationError> {
+    respond(data: Json = null, timeout?: number): Effect.Effect<InternalMessage, CommunicationError> {
         const self = this;
         return this.pm.respond(Schema.encodeSync(InternalMessageProtocolDataSchema)({
             mpo_ident: self.mpo.ident,
-            internal_message_protocol_name: self.mpo_protocol_name,
+            internal_message_protocol_name: self.protocol,
             protocol_data: data
-        })).pipe(
+        }), timeout).pipe(
             Effect.andThen(pme => InternalMessage.FromProtocolMessageEffect(
-                pme, self.mpo, self.mpo_protocol_name
+                pme, self.mpo, self.protocol
             )),
             Effect.mapError(e => to_internal_message_protocol_error(e, self))
         )
@@ -31,7 +31,7 @@ export class InternalMessage {
     static FromProtocolMessageEffect(
         pme: Effect.Effect<ProtocolMessage, ProtocolError>,
         mpo: MessagePartnerObject,
-        mpo_protocol_name: string
+        protocol: string
     ): Effect.Effect<InternalMessage, ProtocolError> {
         return pme.pipe(
             Effect.andThen(pm => pipe(
@@ -39,7 +39,7 @@ export class InternalMessage {
                 Effect.andThen(_ => Effect.gen(function* (_) {
                     const data = yield* getInternalMessageProtocolData;
                     return new InternalMessage(
-                        pm, mpo, data.protocol_data, mpo_protocol_name
+                        pm, mpo, data.protocol_data, protocol
                     );
                 })),
                 Effect.provideService(ProtocolMessageT, pm)

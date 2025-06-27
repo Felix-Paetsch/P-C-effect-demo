@@ -20,8 +20,8 @@
 -   Set and overwrite local computed message data correctly
 -   Get rid of the flying around evironment dependencies; assuming env stays the same and - at most - deactivates!!!!
 -   move "Json" somewhere else
--   timeouts for advances protocols
--   only one mpo protocol really?
+-   Better Errors for highest level protocols
+    => MPO do need envs for example
 
 # Todo
 

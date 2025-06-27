@@ -1,9 +1,8 @@
-import { Context, Effect, Option } from "effect";
+import { Context, Option } from "effect";
 import { Address } from "../../../../messaging/src/base/address";
 import { v4 as uuidv4 } from "uuid";
 import { MessagePartnerObject } from "../message_partner_object";
-// Import protocol to ensure methods and properties are added to the prototype
-import "./protocol";
+import { CreateMPOCommand } from "./create_mpo/command";
 
 export class MessagePartner extends MessagePartnerObject {
     static message_partners: MessagePartner[] = [];
@@ -37,8 +36,6 @@ export class MessagePartner extends MessagePartnerObject {
         MessagePartner.message_partners.push(this);
     }
 
-
-
     ping() { }
     is_alive() { }
 
@@ -69,4 +66,5 @@ export class MessagePartner extends MessagePartnerObject {
     }
 }
 
+MessagePartner._register_protocol(CreateMPOCommand);
 export class MessagePartnerT extends Context.Tag("MessagePartnerT")<MessagePartnerT, MessagePartner>() { }

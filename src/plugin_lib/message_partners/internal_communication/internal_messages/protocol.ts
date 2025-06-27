@@ -1,12 +1,12 @@
 import { Effect, Schema } from "effect";
-import { ProtocolErrorN, ProtocolErrorR, ProtocolMessage, ProtocolError, ProtocolMessageT, Protocol } from "../../../../messaging/src/protocols/protocol";
-import { MessagePartnerObject, MessagePartnerObjectIdentStruct } from "../message_partner_object";
-import { Json } from "../../../../messaging/src/base/message";
-import { EnvironmentT } from "../../../../messaging/src/base/environment";
+import { ProtocolErrorN, ProtocolErrorR, ProtocolMessage, ProtocolError, ProtocolMessageT, Protocol } from "../../../../../messaging/src/protocols/protocol";
+import { MessagePartnerObject, MessagePartnerObjectIdentStruct } from "../../message_partner_object";
+import { Json } from "../../../../../messaging/src/base/message";
+import { EnvironmentT } from "../../../../../messaging/src/base/environment";
 import { get_message_partner_object } from "./tools";
 import { InternalMessage } from "./internal_message";
-import { MessageTransmissionError } from "../../../../messaging/src/base/errors/message_errors";
-import { EnvironmentInactiveError } from "../../../../messaging/src/base/environment";
+import { MessageTransmissionError } from "../../../../../messaging/src/base/errors/message_errors";
+import { EnvironmentInactiveError } from "../../../../../messaging/src/base/environment";
 
 export const InternalMessageProtocolDataSchema = Schema.Struct({
     mpo_ident: MessagePartnerObjectIdentStruct,
@@ -91,7 +91,7 @@ export class InternalCommunicationProtocol extends Protocol<InternalMessageResul
     run_mpo(
         mpo: MessagePartnerObject,
         internal_message_protocol_name: string,
-        data: Json,
+        data?: Json,
         timeout?: number
     ): Effect.Effect<InternalMessageResult, CommunicationErrorN, EnvironmentT> {
         const self = this;

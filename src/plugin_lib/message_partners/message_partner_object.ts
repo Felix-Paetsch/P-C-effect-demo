@@ -1,5 +1,10 @@
 import { Context, Effect, ParseResult, pipe, Schema } from "effect";
-import { MessagePartner } from "./message_partner";
+import { MessagePartner } from "./message_partner/message_partner";
+import { CommunicationError, CommunicationErrorN, CommunicationErrorR, InternalCommunication } from "./internal_communication/internal_messages/protocol";
+import { EnvironmentT } from "../../../messaging/src/base/environment";
+import { InternalMessage } from "./internal_communication/internal_messages/internal_message";
+import { Json } from "../../../messaging/src/base/message";
+import { CommandProtocol } from "./internal_communication/command_protocol";
 
 export const MessagePartnerObjectIdentStruct = Schema.Struct({
     message_partner_uuid: Schema.String,
@@ -39,17 +44,55 @@ export class MessagePartnerObject {
         return this.removed || this.message_partner.is_removed();
     }
 
-    send_internal(protocol: string, data: Json) {
-        return this.message_partner.send_internal(data);
+    protected static _protocols: CommandProtocol[] = [];
+    protected static get protocols(): CommandProtocol[] {
+        if (this.constructor === MessagePartnerObject) {
+            return this._protocols;
+        }
+
+        return this._protocols.concat(Object.getPrototypeOf(
+            this.constructor
+        ).protocols);
     }
 
-    on_internal_message(res: {
-        protocol: string,
-        data: Json
-    }) {
-        if (res.protocol === "send_bridge") {
-            this.on_recieve(res.data);
+    static _register_protocol(protocol: CommandProtocol) {
+        this._protocols.push(protocol);
+    }
+
+    _run_protocol(protocol_name: string, data: Json): Effect.Effect<any, CommunicationError, EnvironmentT> {
+        const self = this;
+        return Effect.gen(function* (_) {
+            const protocol = MessagePartnerObject.protocols.find(p => p.name === protocol_name);
+            if (protocol) {
+                return yield* protocol.run(self, data);
+            }
+
+            return yield* Effect.fail(new CommunicationErrorN({
+                message: `Unknown protocol: ${protocol_name}`,
+                data: { protocol: protocol_name }
+            }));
+        });
+    }
+
+    _send_first_internal_message(protocol: string, data?: Json, timeout?: number): Effect.Effect<
+        Effect.Effect<InternalMessage, CommunicationError, EnvironmentT>,
+        CommunicationError,
+        EnvironmentT
+    > {
+        return InternalCommunication.run_mpo(this, protocol, data, timeout);
+    }
+
+    _recieve_internal_message(protocol_name: string, data: Json, im: InternalMessage): Effect.Effect<void, CommunicationError, EnvironmentT> {
+        const protocol = MessagePartnerObject.protocols.find(p => p.name === protocol_name);
+        if (protocol) {
+            return protocol.recieve(this, data, im);
         }
+
+        return Effect.fail(new CommunicationErrorR({
+            message: `Unknown protocol: ${protocol_name}`,
+            data: { protocol: protocol_name },
+            Message: im
+        }));
     }
 
     static MessagePartnerObjectFromIdent = Schema.transformOrFail(
