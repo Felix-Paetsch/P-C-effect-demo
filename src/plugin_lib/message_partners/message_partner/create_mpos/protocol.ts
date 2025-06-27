@@ -1,19 +1,18 @@
 import { Effect, Schema } from "effect";
-import { MessagePartnerObject } from "../../../message_partner_object";
-import { MPOProtocol, MPOProtocolError, MPOProtocolErrorR } from "../mpo_protocol";
-import { EnvironmentT } from "../../../../../../messaging/src/base/environment";
-import { MPOMessageT } from "../../mpo_message";
-import { MessagePartner } from "../../../message_partner";
+import { MessagePartnerObject } from "../message_partner_object";
+import { MPOProtocol, MPOProtocolError, MPOProtocolErrorR } from "./mpo_protocol";
+import { EnvironmentT } from "../../../../messaging/src/base/environment";
+import { MPOMessageT } from "../mpo_internal_communication/mpo_message";
+import { MessagePartner } from "./message_partner";
 import { v4 as uuidv4 } from "uuid";
-import { Json } from "../../../../../../messaging/src/base/message";
-import { MPOs, MPOCommand, MPOSenderClassMap, initCreateMPOPrototypeExtensionMethods } from "./prototype_extension";
+import { Json } from "../../../../messaging/src/base/message";
+import { MPOs, MPOCommand, MPOSenderClassMap } from "./prototype_extension";
 
 const firstRequestDataSchema = Schema.Struct(
     { command: Schema.String },
     { key: Schema.String, value: Schema.Any }
 )
 
-// Note in theory this could have been implemented as internal_messages
 class CreateMPOProtocol extends MPOProtocol<MessagePartnerObject, MessagePartnerObject> {
     constructor() {
         super("create_mpo", "1.0.0");
@@ -39,7 +38,7 @@ class CreateMPOProtocol extends MPOProtocol<MessagePartnerObject, MessagePartner
             }
 
             const mpo_config = MPOs.find(mpo => mpo.command === command)!;
-            const mpo_obj = (mpo_config.senderClass as any).fromExistingMessagePartnerObject(
+            const mpo_obj = mpo_config.senderClass.fromExistingMessagePartnerObject(
                 mpo, uuid
             );
             return mpo_obj as MPOSenderClassMap[T];
@@ -76,18 +75,10 @@ class CreateMPOProtocol extends MPOProtocol<MessagePartnerObject, MessagePartner
                 }));
             }
 
-            if (!(im.mpo instanceof MessagePartner)) {
-                return yield* Effect.fail(new MPOProtocolErrorR({
-                    message: "Message partner is not a MessagePartner",
-                    data: {},
-                    internal_message: im
-                }));
-            }
-
             const uuid = uuidv4();
             yield* im.respond(uuid); // Also to make sure I can answer
 
-            const mpo_obj = (mpo_config.receiverClass as any).fromExistingMessagePartnerObject(
+            const mpo_obj = mpo_config.receiverClass.fromExistingMessagePartnerObject(
                 im.mpo, uuid
             );
 
@@ -101,4 +92,3 @@ class CreateMPOProtocol extends MPOProtocol<MessagePartnerObject, MessagePartner
 }
 
 export const CreateMPO = new CreateMPOProtocol();
-initCreateMPOPrototypeExtensionMethods(CreateMPO);

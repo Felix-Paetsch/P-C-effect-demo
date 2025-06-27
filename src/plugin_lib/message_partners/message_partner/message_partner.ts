@@ -1,11 +1,9 @@
-import { Context, Option, Effect } from "effect";
-import { Address } from "../../../messaging/src/base/address";
+import { Context, Effect, Option } from "effect";
+import { Address } from "../../../../messaging/src/base/address";
 import { v4 as uuidv4 } from "uuid";
-import { MessagePartnerObject } from "./message_partner_object";
-import { Json } from "../../../messaging/src/base/message";
-import { InternalMessage } from "./internal_communication/internal_message";
-import { EnvironmentT } from "../../../messaging/src/base/environment";
-import { InternalCommunication, CommunicationErrorR, CommunicationError } from "./internal_communication/protocol";
+import { MessagePartnerObject } from "../message_partner_object";
+// Import protocol to ensure methods and properties are added to the prototype
+import "./protocol";
 
 export class MessagePartner extends MessagePartnerObject {
     static message_partners: MessagePartner[] = [];
@@ -39,29 +37,7 @@ export class MessagePartner extends MessagePartnerObject {
         MessagePartner.message_partners.push(this);
     }
 
-    protected send_first_internal_message(protocol: string, data: Json, timeout?: number): Effect.Effect<
-        Effect.Effect<InternalMessage, CommunicationError, EnvironmentT>,
-        CommunicationError,
-        EnvironmentT
-    > {
-        return InternalCommunication.run_mpo(this, protocol, data);
-    }
 
-    protected send_internal_message(protocol: string, data: Json): Effect.Effect<
-        void,
-        CommunicationError,
-        EnvironmentT
-    > {
-        return this.send_first_internal_message(protocol, data);
-    }
-
-    protected recieve_internal_message(protocol: string, data: Json, im: InternalMessage): Effect.Effect<void, CommunicationError, EnvironmentT> {
-        return Effect.fail(new CommunicationErrorR({
-            message: "Not implemented",
-            data: {},
-            Message: im
-        }));
-    }
 
     ping() { }
     is_alive() { }

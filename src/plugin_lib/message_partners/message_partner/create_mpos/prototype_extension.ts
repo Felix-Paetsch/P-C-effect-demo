@@ -1,6 +1,6 @@
 import { Effect } from "effect";
-import { MessagePartner } from "../../../message_partner";
-import { MessagePartnerObject } from "../../../message_partner_object";
+import { MessagePartner } from "../../message_partner";
+import { MessagePartnerObject } from "../../message_partner_object";
 
 type Json = any; // Simplified for this example
 type EnvironmentT = any; // Simplified for this example

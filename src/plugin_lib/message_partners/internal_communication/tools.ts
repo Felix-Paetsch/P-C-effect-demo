@@ -1,27 +1,13 @@
 import { Effect, pipe, Schema } from "effect";
-import { ProtocolErrorR, ProtocolMessageT } from "../../../../../messaging/src/protocols/protocol";
-import { MessagePartner } from "../../message_partner";
-import { MessagePartnerObject, MessagePartnerObjectIdent } from "../../message_partner_object";
-import { Protocol } from "../../../../../messaging/src/protocols/protocol";
-import { ProtocolError } from "../../../../../messaging/src/protocols/protocol";
-import { MPOProtocolDataSchema } from "./message_partner_object_communication";
+import { ProtocolErrorR, ProtocolMessageT } from "../../../../messaging/src/protocols/protocol";
+import { MessagePartner } from "../message_partner";
+import { MessagePartnerObject, MessagePartnerObjectIdent } from "../message_partner_object";
+import { Protocol } from "../../../../messaging/src/protocols/protocol";
+import { ProtocolError } from "../../../../messaging/src/protocols/protocol";
 
 export const MessagePartnerNotFoundMessage = "Message partner not found" as const;
 export const MessagePartnerObjectNotFoundMessage = "Message partner object not found" as const;
 export const MessagePartnerGotRemovedMessage = "Message partner object was removed" as const;
-
-export const get_mpo_protocol_data = Effect.gen(function* (_) {
-    const msg = yield* _(ProtocolMessageT);
-    return yield* Schema.decodeUnknown(MPOProtocolDataSchema)(msg.data);
-}).pipe(
-    Effect.catchAll(e => Effect.gen(function* (_) {
-        return yield* Effect.fail(new ProtocolErrorR({
-            message: "Invalid request",
-            error: e,
-            Message: yield* _(ProtocolMessageT)
-        }))
-    }))
-)
 
 export function get_message_partner(msg_partner_ident: string): Effect.Effect<MessagePartner, ProtocolError, ProtocolMessageT> {
     return pipe(

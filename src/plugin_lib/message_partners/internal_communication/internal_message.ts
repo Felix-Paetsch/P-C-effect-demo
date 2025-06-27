@@ -2,11 +2,10 @@ import { Context, Effect, pipe, Schema } from "effect";
 import { Json } from "../../../../messaging/src/base/message";
 import { ProtocolError, ProtocolMessage, ProtocolMessageT } from "../../../../messaging/src/protocols/protocol";
 import { MessagePartnerObject } from "../message_partner_object";
-import { guard_mpo_still_active, get_mpo_protocol_data } from "./messaging_protocol/mpo_tools";
-import { MPOProtocolDataSchema } from "./messaging_protocol/message_partner_object_communication";
-import { MPOProtocolError, to_mpo_protocol_error } from "./mpo_protocols/mpo_protocol";
+import { guard_mpo_still_active } from "./tools";
+import { CommunicationError, getInternalMessageProtocolData, InternalMessageProtocolDataSchema, to_internal_message_protocol_error } from "./protocol";
 
-export class MPOMessage {
+export class InternalMessage {
     constructor(
         readonly pm: ProtocolMessage,
         readonly mpo: MessagePartnerObject,
@@ -14,17 +13,17 @@ export class MPOMessage {
         readonly mpo_protocol_name: string
     ) { }
 
-    respond(data: Json = null): Effect.Effect<MPOMessage, MPOProtocolError> {
+    respond(data: Json = null): Effect.Effect<InternalMessage, CommunicationError> {
         const self = this;
-        return this.pm.respond(Schema.encodeSync(MPOProtocolDataSchema)({
+        return this.pm.respond(Schema.encodeSync(InternalMessageProtocolDataSchema)({
             mpo_ident: self.mpo.ident,
-            mpo_protocol_name: self.mpo_protocol_name,
+            internal_message_protocol_name: self.mpo_protocol_name,
             protocol_data: data
         })).pipe(
-            Effect.andThen(pme => MPOMessage.FromProtocolMessageEffect(
+            Effect.andThen(pme => InternalMessage.FromProtocolMessageEffect(
                 pme, self.mpo, self.mpo_protocol_name
             )),
-            Effect.mapError(e => to_mpo_protocol_error(e, self))
+            Effect.mapError(e => to_internal_message_protocol_error(e, self))
         )
     }
 
@@ -33,13 +32,13 @@ export class MPOMessage {
         pme: Effect.Effect<ProtocolMessage, ProtocolError>,
         mpo: MessagePartnerObject,
         mpo_protocol_name: string
-    ): Effect.Effect<MPOMessage, ProtocolError> {
+    ): Effect.Effect<InternalMessage, ProtocolError> {
         return pme.pipe(
             Effect.andThen(pm => pipe(
                 guard_mpo_still_active(mpo),
                 Effect.andThen(_ => Effect.gen(function* (_) {
-                    const data = yield* get_mpo_protocol_data;
-                    return new MPOMessage(
+                    const data = yield* getInternalMessageProtocolData;
+                    return new InternalMessage(
                         pm, mpo, data.protocol_data, mpo_protocol_name
                     );
                 })),
@@ -49,4 +48,4 @@ export class MPOMessage {
     }
 }
 
-export class MPOMessageT extends Context.Tag("MPOMessageT")<MPOMessageT, MPOMessage>() { }
+export class InternalMessageT extends Context.Tag("InternalMessageT")<InternalMessageT, InternalMessage>() { }
