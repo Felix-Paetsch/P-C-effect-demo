@@ -3,7 +3,7 @@ import { ProtocolErrorN, ProtocolErrorR, ProtocolMessage } from "../../../../../
 import { MessagePartnerObject, MessagePartnerObjectIdent } from "../../message_partner_object";
 import { Json } from "../../../../../messaging/src/base/message";
 import { MessagePartnerObjectCommunication } from "../messaging_protocol/message_partner_object_communication";
-import { InternalMessage, InternalMessageT } from "../internal_message";
+import { MPOMessage, MPOMessageT } from "../mpo_message";
 import { EnvironmentT } from "../../../../../messaging/src/base/environment";
 
 export type MPOProtocolError = MPOProtocolErrorR | MPOProtocolErrorN;
@@ -12,7 +12,7 @@ export class MPOProtocolErrorN extends ProtocolErrorN {
         message: string,
         data?: Json,
         error?: Error,
-        readonly Message?: InternalMessage | ProtocolMessage
+        readonly Message?: MPOMessage | ProtocolMessage
     }) {
         super({
             message: args.message,
@@ -28,7 +28,7 @@ export class MPOProtocolErrorR extends ProtocolErrorR {
         message: string,
         data?: Json,
         error?: Error,
-        readonly internal_message: InternalMessage | ProtocolMessage
+        readonly internal_message: MPOMessage | ProtocolMessage
     }) {
         super({
             message: args.message,
@@ -39,7 +39,7 @@ export class MPOProtocolErrorR extends ProtocolErrorR {
     }
 }
 
-export function to_mpo_protocol_error(e: Error, msg?: InternalMessage): MPOProtocolError {
+export function to_mpo_protocol_error(e: Error, msg?: MPOMessage): MPOProtocolError {
     if (e instanceof ProtocolErrorR && msg) {
         return new MPOProtocolErrorR({
             message: e.message,
@@ -68,7 +68,7 @@ export abstract class MPOProtocol<SenderResult, ReceiverResult> {
     }
 
     static not_implemented_error = Effect.gen(function* (_) {
-        const message = yield* _(InternalMessageT);
+        const message = yield* _(MPOMessageT);
         return yield* Effect.fail(new MPOProtocolErrorR(
             {
                 message: "Not implemented",
@@ -78,7 +78,7 @@ export abstract class MPOProtocol<SenderResult, ReceiverResult> {
         ))
     })
 
-    protected send_first_message(mpo: MessagePartnerObject, data: Json = null): Effect.Effect<InternalMessage, MPOProtocolErrorN, EnvironmentT> {
+    protected send_first_message(mpo: MessagePartnerObject, data: Json = null): Effect.Effect<MPOMessage, MPOProtocolErrorN, EnvironmentT> {
         return MessagePartnerObjectCommunication.mpo_run(mpo, this.name, data);
     }
 
@@ -89,7 +89,7 @@ export abstract class MPOProtocol<SenderResult, ReceiverResult> {
         }))
     }
 
-    get on_first_request(): Effect.Effect<void, MPOProtocolError, InternalMessageT> {
+    get on_first_request(): Effect.Effect<void, MPOProtocolError, MPOMessageT> {
         return MPOProtocol.not_implemented_error
     }
 

@@ -2,7 +2,7 @@ import { Effect, Schema } from "effect";
 import { MessagePartnerObject } from "../../../message_partner_object";
 import { MPOProtocol, MPOProtocolError, MPOProtocolErrorR } from "../mpo_protocol";
 import { EnvironmentT } from "../../../../../../messaging/src/base/environment";
-import { InternalMessageT } from "../../internal_message";
+import { MPOMessageT } from "../../mpo_message";
 import { MessagePartner } from "../../../message_partner";
 import { v4 as uuidv4 } from "uuid";
 import { Json } from "../../../../../../messaging/src/base/message";
@@ -13,6 +13,7 @@ const firstRequestDataSchema = Schema.Struct(
     { key: Schema.String, value: Schema.Any }
 )
 
+// Note in theory this could have been implemented as internal_messages
 class CreateMPOProtocol extends MPOProtocol<MessagePartnerObject, MessagePartnerObject> {
     constructor() {
         super("create_mpo", "1.0.0");
@@ -45,9 +46,9 @@ class CreateMPOProtocol extends MPOProtocol<MessagePartnerObject, MessagePartner
         });
     }
 
-    get on_first_request(): Effect.Effect<void, MPOProtocolError, InternalMessageT> {
+    get on_first_request(): Effect.Effect<void, MPOProtocolError, MPOMessageT> {
         return Effect.gen(function* (_) {
-            const im = yield* _(InternalMessageT);
+            const im = yield* _(MPOMessageT);
             const data = yield* Schema.decodeUnknown(firstRequestDataSchema)(im.data).pipe(
                 Effect.mapError(e => new MPOProtocolErrorR({
                     message: "Invalid first request data",

@@ -1,7 +1,7 @@
 import { Effect, Schema } from "effect";
 
 import { Json } from "../../../../../messaging/src/base/message";
-import { InternalMessage, InternalMessageT } from "../internal_message";
+import { MPOMessage, MPOMessageT } from "../mpo_message";
 import { ProtocolError, ProtocolMessageT } from "../../../../../messaging/src/protocols/protocol";
 import { MessagePartnerObject, MessagePartnerObjectIdentStruct } from "../../message_partner_object";
 import { EnvironmentT } from "../../../../../messaging/src/base/environment";
@@ -17,7 +17,7 @@ export const MPOProtocolDataSchema = Schema.Struct({
 
 export type MessagePartnerObjectData = Schema.Schema.Type<typeof MPOProtocolDataSchema>;
 
-class MessagePartnerObjectCommunicationProtocol extends Protocol<InternalMessage, InternalMessage> {
+class MessagePartnerObjectCommunicationProtocol extends Protocol<MPOMessage, MPOMessage> {
     constructor() {
         super("message_partner_object_communication", "main", "1.0.0");
     }
@@ -27,11 +27,11 @@ class MessagePartnerObjectCommunicationProtocol extends Protocol<InternalMessage
         this.mpo_protocols.push(mpo_protocol);
     }
 
-    on_callback = (im: InternalMessage): Effect.Effect<void, never, never> => {
+    on_callback = (im: MPOMessage): Effect.Effect<void, never, never> => {
         const mpo_protocol = this.mpo_protocols.find(mpo_protocol => mpo_protocol.name === im.mpo_protocol_name);
         if (mpo_protocol) {
             return mpo_protocol.on_first_request.pipe(
-                Effect.provideService(InternalMessageT, im),
+                Effect.provideService(MPOMessageT, im),
                 Effect.ignore
             )
         }
@@ -50,7 +50,7 @@ class MessagePartnerObjectCommunicationProtocol extends Protocol<InternalMessage
                     Effect.provideService(EnvironmentT, env)
                 );
             })),
-            Effect.andThen(pme => InternalMessage.FromProtocolMessageEffect(pme, mpo, mpo_protocol_name)),
+            Effect.andThen(pme => MPOMessage.FromProtocolMessageEffect(pme, mpo, mpo_protocol_name)),
             Effect.mapError(e => to_mpo_protocol_error(e))
         )
     }
@@ -62,7 +62,7 @@ class MessagePartnerObjectCommunicationProtocol extends Protocol<InternalMessage
             const data = yield* get_mpo_protocol_data;
             const mpo = yield* get_message_partner_object(data.mpo_ident);
             return yield* self.on_callback(
-                new InternalMessage(msg, mpo, data.protocol_data, data.mpo_protocol_name)
+                new MPOMessage(msg, mpo, data.protocol_data, data.mpo_protocol_name)
             );
         })
     }

@@ -6,7 +6,7 @@ import { guard_mpo_still_active, get_mpo_protocol_data } from "./messaging_proto
 import { MPOProtocolDataSchema } from "./messaging_protocol/message_partner_object_communication";
 import { MPOProtocolError, to_mpo_protocol_error } from "./mpo_protocols/mpo_protocol";
 
-export class InternalMessage {
+export class MPOMessage {
     constructor(
         readonly pm: ProtocolMessage,
         readonly mpo: MessagePartnerObject,
@@ -14,32 +14,32 @@ export class InternalMessage {
         readonly mpo_protocol_name: string
     ) { }
 
-    respond(data: Json = null): Effect.Effect<InternalMessage, MPOProtocolError> {
+    respond(data: Json = null): Effect.Effect<MPOMessage, MPOProtocolError> {
         const self = this;
         return this.pm.respond(Schema.encodeSync(MPOProtocolDataSchema)({
             mpo_ident: self.mpo.ident,
             mpo_protocol_name: self.mpo_protocol_name,
             protocol_data: data
         })).pipe(
-            Effect.andThen(pme => InternalMessage.FromProtocolMessageEffect(
+            Effect.andThen(pme => MPOMessage.FromProtocolMessageEffect(
                 pme, self.mpo, self.mpo_protocol_name
             )),
             Effect.mapError(e => to_mpo_protocol_error(e, self))
         )
     }
 
-    // When processing a internal message it is guaranteed that the mpo is still active
+    // When processing a mpo message it is guaranteed that the mpo is still active
     static FromProtocolMessageEffect(
         pme: Effect.Effect<ProtocolMessage, ProtocolError>,
         mpo: MessagePartnerObject,
         mpo_protocol_name: string
-    ): Effect.Effect<InternalMessage, ProtocolError> {
+    ): Effect.Effect<MPOMessage, ProtocolError> {
         return pme.pipe(
             Effect.andThen(pm => pipe(
                 guard_mpo_still_active(mpo),
                 Effect.andThen(_ => Effect.gen(function* (_) {
                     const data = yield* get_mpo_protocol_data;
-                    return new InternalMessage(
+                    return new MPOMessage(
                         pm, mpo, data.protocol_data, mpo_protocol_name
                     );
                 })),
@@ -49,4 +49,4 @@ export class InternalMessage {
     }
 }
 
-export class InternalMessageT extends Context.Tag("InternalMessageT")<InternalMessageT, InternalMessage>() { }
+export class MPOMessageT extends Context.Tag("MPOMessageT")<MPOMessageT, MPOMessage>() { }

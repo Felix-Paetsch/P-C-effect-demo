@@ -1,7 +1,7 @@
 # Todo:
 
--   Generalize the "on" methods
 -   Generalize Bridge & MP
+-   Remove Message Partners & MPOs
 
 -   Unify the syntax for on callbacks and stuff, registering...
 -   Go through all effect .orDie // ignore
@@ -20,6 +20,8 @@
 -   Set and overwrite local computed message data correctly
 -   Get rid of the flying around evironment dependencies; assuming env stays the same and - at most - deactivates!!!!
 -   move "Json" somewhere else
+-   timeouts for advances protocols
+-   only one mpo protocol really?
 
 # Todo
 

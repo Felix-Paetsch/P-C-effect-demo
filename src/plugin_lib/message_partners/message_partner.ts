@@ -27,7 +27,7 @@ export class MessagePartner extends MessagePartnerObject {
         super(null as any, _uuid);
         this._message_partner = this;
 
-        // Todo: What is accidentally we created it multiple times at the same place?
+        // Todo: What if accidentally we created it multiple times at the same place?
         const existing_mp = MessagePartner.get_message_partner(this._uuid);
         if (Option.isSome(existing_mp)) {
             existing_mp.value._uuid = this._uuid + "_1";
@@ -37,8 +37,19 @@ export class MessagePartner extends MessagePartnerObject {
         MessagePartner.message_partners.push(this);
     }
 
+
+
+    ping() { }
+    is_alive() { }
+
     is_removed(): boolean {
         return this.removed;
+    }
+
+    register_message_partner_object(mpo: MessagePartnerObject) {
+        if (!(mpo instanceof MessagePartner)) {
+            this.message_partner_objects.push(mpo);
+        }
     }
 
     get_message_partner_object(uuid: string): Option.Option<MessagePartnerObject> {
@@ -56,23 +67,6 @@ export class MessagePartner extends MessagePartnerObject {
             mp => mp.uuid === uuid
         ));
     }
-
-    /*
-    
-        bridge(): Effect.Effect<Bridge, ProtocolError, EnvironmentT> {
-    
-        }
-        on_bridge() { }
-    
-        branch() { }
-        on_branch() { }
-    
-        signal() { }
-        on_signal() { }
-    
-        remove() { }
-        on_remove() { }
-    */
 }
 
 export class MessagePartnerT extends Context.Tag("MessagePartnerT")<MessagePartnerT, MessagePartner>() { }

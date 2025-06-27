@@ -5,27 +5,20 @@ import { MessagePartnerObject } from "../../../message_partner_object";
 type Json = any; // Simplified for this example
 type EnvironmentT = any; // Simplified for this example
 
-type MPOConfig = {
-    senderClass: new (...args: any[]) => MessagePartner;
-    receiverClass: new (...args: any[]) => MessagePartnerObject;
-    create_method_name: string;
-    command: string;
-};
-
-export const MPOs: readonly MPOConfig[] = [
+export const MPOs = [
     {
-        senderClass: MessagePartner,
+        senderClass: MessagePartnerObject,
         receiverClass: MessagePartnerObject,
         create_method_name: "branch",
         command: "create_message_partner"
     },
-    {
-        senderClass: MessagePartner,
-        receiverClass: MessagePartnerObject,
-        create_method_name: "join",
-        command: "join_message_partner"
-    }
-] as const satisfies readonly MPOConfig[];
+    /*{
+        senderClass: Bridge,
+        receiverClass: Bridge,
+        create_method_name: "bridge",
+        command: "create_bridge"
+    }*/
+] as const;
 
 type MPOConfigUnion = typeof MPOs[number];
 export type MPOCommand = MPOConfigUnion["command"];

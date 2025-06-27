@@ -2,7 +2,7 @@ import { Effect, Either } from "effect";
 import { MessagePartnerObject } from "../../message_partner_object";
 import { MPOProtocol, MPOProtocolError } from "./mpo_protocol";
 import { EnvironmentT } from "../../../../../messaging/src/base/environment";
-import { InternalMessageT } from "../internal_message";
+import { MPOMessageT } from "../mpo_message";
 
 class PingProtocol extends MPOProtocol<Either.Either<boolean, MPOProtocolError>, void> {
     constructor() {
@@ -16,9 +16,9 @@ class PingProtocol extends MPOProtocol<Either.Either<boolean, MPOProtocolError>,
         );
     }
 
-    get on_first_request(): Effect.Effect<void, MPOProtocolError, InternalMessageT> {
+    get on_first_request(): Effect.Effect<void, MPOProtocolError, MPOMessageT> {
         return Effect.gen(function* (_) {
-            const im = yield* _(InternalMessageT);
+            const im = yield* _(MPOMessageT);
             return yield* im.respond();
         });
     }

@@ -16,7 +16,9 @@ export class MessagePartnerObject {
     constructor(
         protected _message_partner: MessagePartner,
         protected _uuid: string
-    ) { }
+    ) {
+        this._message_partner?.register_message_partner_object(this);
+    }
 
     get message_partner(): MessagePartner {
         return this._message_partner;
@@ -35,6 +37,19 @@ export class MessagePartnerObject {
 
     is_removed(): boolean {
         return this.removed || this.message_partner.is_removed();
+    }
+
+    send_internal(protocol: string, data: Json) {
+        return this.message_partner.send_internal(data);
+    }
+
+    on_internal_message(res: {
+        protocol: string,
+        data: Json
+    }) {
+        if (res.protocol === "send_bridge") {
+            this.on_recieve(res.data);
+        }
     }
 
     static MessagePartnerObjectFromIdent = Schema.transformOrFail(
