@@ -2,6 +2,7 @@
 
 -   Generalize Bridge & MP
 -   Remove Message Partners & MPOs
+-   Every Pair of Message partners could have id_1 and id_2.. and then their id as MOPs can again be the same..
 
 -   Unify the syntax for on callbacks and stuff, registering...
 -   Go through all effect .orDie // ignore

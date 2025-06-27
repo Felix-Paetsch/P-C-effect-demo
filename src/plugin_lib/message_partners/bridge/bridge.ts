@@ -1,0 +1,28 @@
+import { MessagePartnerObject } from "../message_partner_object";
+import { Json } from "../../../../messaging/src/base/message";
+import { Effect } from "effect";
+import { EnvironmentT } from "../../../../messaging/src/base/environment";
+import { InternalMessage } from "../internal_communication/internal_messages/internal_message";
+import { CommunicationError } from "../internal_communication/internal_messages/protocol";
+
+export class Bridge extends MessagePartnerObject {
+    send(data: Json) {
+        return this._send_first_internal_message("send_bridge", data);
+    }
+
+    _recieve_internal_message_no_protocol(
+        protocol_name: string,
+        data: Json, im: InternalMessage
+    ): Effect.Effect<void, CommunicationError, EnvironmentT> {
+        if (protocol_name === "send_bridge") {
+            return Effect.suspend(() => Effect.succeed(this.on_message_cb(data)));
+        }
+
+        return super._recieve_internal_message_no_protocol(protocol_name, data, im);
+    }
+
+    private on_message_cb: (data: Json) => void = () => { };
+    on(cb: (data: Json) => void) {
+        this.on_message_cb = cb;
+    }
+}

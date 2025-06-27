@@ -4,6 +4,7 @@ import { MessagePartnerObject } from "../../message_partner_object";
 import { CommunicationError } from "../../internal_communication/internal_messages/protocol";
 import { Json } from "../../../../../messaging/src/base/message";
 import { EnvironmentT } from "../../../../../messaging/src/base/environment";
+import { Bridge } from "../../bridge/bridge";
 
 export const MPOs = [
     {
@@ -12,12 +13,12 @@ export const MPOs = [
         create_method_name: "branch",
         command: "create_message_partner"
     },
-    /*{
+    {
         senderClass: Bridge,
         receiverClass: Bridge,
         create_method_name: "bridge",
         command: "create_bridge"
-    }*/
+    }
 ] as const;
 
 type MPOConfigUnion = typeof MPOs[number];
@@ -60,24 +61,26 @@ export type _call__create_<S extends MPOConfigUnion["senderClass"]> = (data?: Js
     EnvironmentT
 >
 
-MPOs.forEach(mpoConfig => {
-    const { create_method_name } = mpoConfig;
-    const create__fun: _call__create_<any> = function (this: MessagePartner, data: Json = null) {
-        return this._run_protocol("create_mpo", {
-            obj_cmd: mpoConfig.command,
-            data
-        }).pipe(Effect.map(res => res as MessagePartner));
-    };
+export const init_mpo_prototype_extension = () => {
+    MPOs.forEach(mpoConfig => {
+        const { create_method_name } = mpoConfig;
+        const create__fun: _call__create_<any> = function (this: MessagePartner, data: Json = null) {
+            return this._run_protocol("create_mpo", {
+                obj_cmd: mpoConfig.command,
+                data
+            }).pipe(Effect.map(res => res as MessagePartner));
+        };
 
-    const on__fun: on__create<any> = function (this: MessagePartner, callback: null | ((receiverClass: MessagePartnerObject, data?: Json) => void)) {
-        (this as any)[`${create_method_name}_cb`] = callback;
-    };
+        const on__fun: on__create<any> = function (this: MessagePartner, callback: null | ((receiverClass: MessagePartnerObject, data?: Json) => void)) {
+            (this as any)[`${create_method_name}_cb`] = callback;
+        };
 
-    (MessagePartner.prototype as any)[create_method_name] = create__fun;
+        (MessagePartner.prototype as any)[create_method_name] = create__fun;
 
-    const onMethodName = `on_${create_method_name}`;
-    (MessagePartner.prototype as any)[onMethodName] = on__fun;
+        const onMethodName = `on_${create_method_name}`;
+        (MessagePartner.prototype as any)[onMethodName] = on__fun;
 
-    const callbackPropertyName = `${create_method_name}_cb`;
-    (MessagePartner.prototype as any)[callbackPropertyName] = null;
-});
+        const callbackPropertyName = `${create_method_name}_cb`;
+        (MessagePartner.prototype as any)[callbackPropertyName] = null;
+    });
+}

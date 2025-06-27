@@ -1,15 +1,16 @@
 import { Effect, Schema } from "effect";
 import { ProtocolErrorN, ProtocolErrorR, ProtocolMessage, ProtocolError, ProtocolMessageT, Protocol } from "../../../../../messaging/src/protocols/protocol";
-import { MessagePartnerObject, MessagePartnerObjectIdentStruct } from "../../message_partner_object";
+import { MessagePartnerObject } from "../../message_partner_object";
 import { Json } from "../../../../../messaging/src/base/message";
 import { EnvironmentT } from "../../../../../messaging/src/base/environment";
 import { get_message_partner_object } from "./tools";
 import { InternalMessage } from "./internal_message";
-import { MessageTransmissionError } from "../../../../../messaging/src/base/errors/message_errors";
-import { EnvironmentInactiveError } from "../../../../../messaging/src/base/environment";
 
 export const InternalMessageProtocolDataSchema = Schema.Struct({
-    mpo_ident: MessagePartnerObjectIdentStruct,
+    mpo_ident: Schema.Struct({
+        message_partner_uuid: Schema.String,
+        uuid: Schema.String
+    }),
     internal_message_protocol_name: Schema.String,
     protocol_data: Schema.Any
 });
@@ -119,19 +120,25 @@ export class InternalCommunicationProtocol extends Protocol<InternalMessageResul
         })
     }
 
-    get on_first_request(): Effect.Effect<void, ProtocolError, ProtocolMessageT> {
+    get on_first_request(): Effect.Effect<void, ProtocolError, ProtocolMessageT | EnvironmentT> {
         const self = this;
         return Effect.gen(function* (_) {
             const msg = yield* _(ProtocolMessageT);
             const data = yield* getInternalMessageProtocolData;
             const mpo = yield* get_message_partner_object(data.mpo_ident);
-            return yield* self.on_callback(
-                new InternalMessage(
-                    msg,
-                    mpo,
-                    data.protocol_data,
-                    data.internal_message_protocol_name
-                )
+            const im = new InternalMessage(
+                msg,
+                mpo,
+                data.protocol_data,
+                data.internal_message_protocol_name
+            );
+
+            yield* mpo._recieve_internal_message(
+                data.internal_message_protocol_name,
+                data.protocol_data,
+                im
+            ).pipe(
+                Effect.ignore
             );
         })
     }

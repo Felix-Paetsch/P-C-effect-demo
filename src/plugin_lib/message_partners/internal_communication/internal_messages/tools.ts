@@ -1,6 +1,6 @@
 import { Effect, pipe, Schema } from "effect";
 import { ProtocolErrorR, ProtocolMessageT } from "../../../../../messaging/src/protocols/protocol";
-import { MessagePartner } from "../message_partner";
+import { MessagePartner } from "../../message_partner/message_partner";
 import { MessagePartnerObject, MessagePartnerObjectIdent } from "../../message_partner_object";
 import { Protocol } from "../../../../../messaging/src/protocols/protocol";
 import { ProtocolError } from "../../../../../messaging/src/protocols/protocol";

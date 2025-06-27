@@ -7,8 +7,9 @@ import { create__cb, MPOCommand, MPOs } from "./prototype_extension";
 import { Json } from "../../../../../messaging/src/base/message";
 import { InternalMessage } from "../../internal_communication/internal_messages/internal_message";
 import { v4 as uuidv4 } from 'uuid';
+import { MessagePartnerObject } from "../../message_partner_object";
 
-class CreateMPOCommandProtocol extends CommandProtocol {
+class CreateMPOCommandProtocol extends CommandProtocol<MessagePartnerObject> {
     constructor() {
         super("create_mpo");
     }
@@ -16,7 +17,7 @@ class CreateMPOCommandProtocol extends CommandProtocol {
     run(mpo: MessagePartner, data: {
         obj_cmd: MPOCommand,
         data: Json
-    }): Effect.Effect<void, CommunicationError, EnvironmentT> {
+    }): Effect.Effect<MessagePartnerObject, CommunicationError, EnvironmentT> {
         const self = this;
 
         return Effect.gen(function* (_) {
@@ -32,13 +33,13 @@ class CreateMPOCommandProtocol extends CommandProtocol {
 
             const mpoClass = MPOs.find(mpo => mpo.command == data.obj_cmd);
             if (!mpoClass) {
-                yield* Effect.fail(new CommunicationErrorN({
+                return yield* Effect.fail(new CommunicationErrorN({
                     message: "Unknown creation command",
                     Message: im
                 }))
             }
 
-            return mpoClass?.senderClass.fromExistingMessagePartnerObject(mpo, uuid as string);
+            return mpoClass.senderClass.fromExistingMessagePartnerObject(mpo, uuid as string);
         })
     }
 

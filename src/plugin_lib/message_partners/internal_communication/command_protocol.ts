@@ -5,7 +5,7 @@ import { Json } from "../../../../messaging/src/base/message";
 import { InternalMessage } from "./internal_messages/internal_message";
 import { MessagePartnerObject } from "../message_partner_object";
 
-export abstract class CommandProtocol {
+export abstract class CommandProtocol<SenderResult> {
     constructor(
         readonly name: string,
 
@@ -19,7 +19,7 @@ export abstract class CommandProtocol {
         return mpo._send_first_internal_message(this.name, data, timeout);
     }
 
-    run(mpo: MessagePartnerObject, data: Json): Effect.Effect<void, CommunicationError, EnvironmentT> {
+    run(mpo: MessagePartnerObject, data: Json): Effect.Effect<SenderResult, CommunicationError, EnvironmentT> {
         return Effect.fail(new CommunicationErrorN({
             message: `Unimplemented command protocol`,
             data: { protocol: this.name }

@@ -3,6 +3,7 @@ import { Address } from "../../../../messaging/src/base/address";
 import { v4 as uuidv4 } from "uuid";
 import { MessagePartnerObject } from "../message_partner_object";
 import { CreateMPOCommand } from "./create_mpo/command";
+import { init_mpo_prototype_extension } from "./create_mpo/prototype_extension";
 
 export class MessagePartner extends MessagePartnerObject {
     static message_partners: MessagePartner[] = [];
@@ -67,4 +68,5 @@ export class MessagePartner extends MessagePartnerObject {
 }
 
 MessagePartner._register_protocol(CreateMPOCommand);
+init_mpo_prototype_extension();
 export class MessagePartnerT extends Context.Tag("MessagePartnerT")<MessagePartnerT, MessagePartner>() { }

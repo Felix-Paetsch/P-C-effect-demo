@@ -44,8 +44,8 @@ export class MessagePartnerObject {
         return this.removed || this.message_partner.is_removed();
     }
 
-    protected static _protocols: CommandProtocol[] = [];
-    protected static get protocols(): CommandProtocol[] {
+    protected static _protocols: CommandProtocol<any>[] = [];
+    protected static get protocols(): CommandProtocol<any>[] {
         if (this.constructor === MessagePartnerObject) {
             return this._protocols;
         }
@@ -55,7 +55,7 @@ export class MessagePartnerObject {
         ).protocols);
     }
 
-    static _register_protocol(protocol: CommandProtocol) {
+    static _register_protocol(protocol: CommandProtocol<any>) {
         this._protocols.push(protocol);
     }
 
@@ -88,6 +88,10 @@ export class MessagePartnerObject {
             return protocol.recieve(this, data, im);
         }
 
+        return this._recieve_internal_message_no_protocol(protocol_name, data, im);
+    }
+
+    _recieve_internal_message_no_protocol(protocol_name: string, data: Json, im: InternalMessage): Effect.Effect<void, CommunicationError, EnvironmentT> {
         return Effect.fail(new CommunicationErrorR({
             message: `Unknown protocol: ${protocol_name}`,
             data: { protocol: protocol_name },
@@ -116,56 +120,6 @@ export class MessagePartnerObject {
     static fromExistingMessagePartnerObject(mpo: MessagePartnerObject, uuid: string) {
         return new this(mpo.message_partner, uuid);
     }
-
-    /*
-    protected internally_send_message(message: Json) {
-        return this.message_partner.send_message(message);
-    }
-
-    protected internally_receive_message(message: Json) {
-        return this.message_partner.receive_message(message);
-    }
-    */
-
-
-
-
-
-
-
-
-
-
-    /*
-        close(): Effect.Effect<void, never, never> {
-            return Effect.void
-        }
-    
-        on_close(): Effect.Effect<void, never, never> {
-            return Effect.void;
-        }
-    
-        ping(): Effect.Effect<Either.Either<true, ProtocolError>, never, EnvironmentT> {
-            return Ping.run(this.message_partner.address, this.ident);
-        }
-    
-        is_alive(): Effect.Effect<Either.Either<boolean, ProtocolError>, never, EnvironmentT> {
-            return Ping.run(this.message_partner.address, this.ident).pipe(
-                Effect.map(res => {
-                    if (Either.isRight(res)) {
-                        return res;
-                    }
-    
-                    const err = res.left;
-                    if (err.message === MessagePartnerNotFoundMessage) {
-                        return Either.right(false);
-                    }
-    
-                    return res;
-                })
-            );
-        }
-        */
 }
 
 export class MessagePartnerObjectT extends Context.Tag("MessagePartnerObjectT")<MessagePartnerObjectT, MessagePartnerObject>() { }
