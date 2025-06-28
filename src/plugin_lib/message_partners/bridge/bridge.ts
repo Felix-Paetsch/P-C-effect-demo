@@ -2,8 +2,8 @@ import { MessagePartnerObject } from "../message_partner_object";
 import { Json } from "../../../../messaging/src/base/message";
 import { Effect } from "effect";
 import { EnvironmentT } from "../../../../messaging/src/base/environment";
-import { InternalMessage } from "../internal_communication/internal_messages/internal_message";
-import { CommunicationError } from "../internal_communication/internal_messages/protocol";
+import { InternalMessage } from "../internal_communication/internal_message";
+import { CommunicationError, CommunicationErrorR } from "../internal_communication/protocol";
 
 export class Bridge extends MessagePartnerObject {
     send(data: Json) {
@@ -18,7 +18,11 @@ export class Bridge extends MessagePartnerObject {
             return Effect.suspend(() => Effect.succeed(this.on_message_cb(data)));
         }
 
-        return super._recieve_internal_message_no_protocol(protocol_name, data, im);
+        return Effect.fail(new CommunicationErrorR({
+            message: `Unknown protocol: ${protocol_name}`,
+            data: { protocol: protocol_name },
+            Message: im
+        }));
     }
 
     private on_message_cb: (data: Json) => void = () => { };

@@ -1,9 +1,13 @@
-import { Context, Option } from "effect";
+import { Context, Option, Effect, Schema } from "effect";
 import { Address } from "../../../../messaging/src/base/address";
 import { v4 as uuidv4 } from "uuid";
 import { MessagePartnerObject } from "../message_partner_object";
-import { CreateMPOCommand } from "./create_mpo/command";
-import { init_mpo_prototype_extension } from "./create_mpo/prototype_extension";
+import { createMpo, receiveMpo, MPOCommand } from "./create_mpo";
+import { CommunicationError, CommunicationErrorR } from "../internal_communication/protocol";
+import { Json } from "../../../../messaging/src/base/message";
+import { EnvironmentT } from "../../../../messaging/src/base/environment";
+import { InternalMessage } from "../internal_communication/internal_message";
+import { Bridge } from "../bridge/bridge";
 
 export class MessagePartner extends MessagePartnerObject {
     static message_partners: MessagePartner[] = [];
@@ -20,6 +24,7 @@ export class MessagePartner extends MessagePartnerObject {
     }
 
     private message_partner_objects: MessagePartnerObject[] = [];
+
     constructor(
         readonly address: Address,
         protected _uuid: string = uuidv4()
@@ -36,9 +41,6 @@ export class MessagePartner extends MessagePartnerObject {
 
         MessagePartner.message_partners.push(this);
     }
-
-    ping() { }
-    is_alive() { }
 
     is_removed(): boolean {
         return this.removed;
@@ -65,8 +67,35 @@ export class MessagePartner extends MessagePartnerObject {
             mp => mp.uuid === uuid
         ));
     }
+
+    // Protocol routing for receiving messages
+    _recieve_internal_message(protocol_name: string, data: Json, im: InternalMessage): Effect.Effect<void, CommunicationError, EnvironmentT> {
+        if (protocol_name === "create_mpo") {
+            return receiveMpo(this, data, im);
+        }
+
+        return Effect.fail(new CommunicationErrorR({
+            message: `Unknown protocol: ${protocol_name}`,
+            data: { protocol: protocol_name },
+            Message: im
+        }));
+    }
+
+    branch(data: Json = null): Effect.Effect<MessagePartnerObject, CommunicationError, EnvironmentT> {
+        return createMpo(this, "create_message_partner", data);
+    }
+    protected branch_cb: null | ((receiverClass: MessagePartnerObject, data?: Json) => void) = null;
+    on_branch(callback: null | ((receiverClass: MessagePartnerObject, data?: Json) => void)): void {
+        this.branch_cb = callback;
+    }
+
+    bridge(data: Json = null): Effect.Effect<Bridge, CommunicationError, EnvironmentT> {
+        return createMpo(this, "create_bridge", data) as Effect.Effect<Bridge, CommunicationError, EnvironmentT>;
+    }
+    protected bridge_cb: null | ((receiverClass: Bridge, data?: Json) => void) = null;
+    on_bridge(callback: null | ((receiverClass: Bridge, data?: Json) => void)): void {
+        this.bridge_cb = callback;
+    }
 }
 
-MessagePartner._register_protocol(CreateMPOCommand);
-init_mpo_prototype_extension();
 export class MessagePartnerT extends Context.Tag("MessagePartnerT")<MessagePartnerT, MessagePartner>() { }

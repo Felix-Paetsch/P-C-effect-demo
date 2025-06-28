@@ -1,7 +1,7 @@
 import { Context, Effect, pipe, Schema } from "effect";
-import { Json } from "../../../../../messaging/src/base/message";
-import { ProtocolError, ProtocolMessage, ProtocolMessageT } from "../../../../../messaging/src/protocols/protocol";
-import { MessagePartnerObject } from "../../message_partner_object";
+import { Json } from "../../../../messaging/src/base/message";
+import { ProtocolError, ProtocolMessage, ProtocolMessageT } from "../../../../messaging/src/protocols/protocol";
+import { MessagePartnerObject } from "../message_partner_object";
 import { guard_mpo_still_active } from "./tools";
 import { CommunicationError, getInternalMessageProtocolData, InternalMessageProtocolDataSchema, to_internal_message_protocol_error } from "./protocol";
 
@@ -13,16 +13,20 @@ export class InternalMessage {
         readonly protocol: string
     ) { }
 
-    respond(data: Json = null, timeout?: number): Effect.Effect<InternalMessage, CommunicationError> {
+    respond(data: Json = null, timeout?: number): Effect.Effect<
+        Effect.Effect<InternalMessage, CommunicationError, never>,
+        CommunicationError,
+        never
+    > {
         const self = this;
         return this.pm.respond(Schema.encodeSync(InternalMessageProtocolDataSchema)({
             mpo_ident: self.mpo.ident,
             internal_message_protocol_name: self.protocol,
             protocol_data: data
         }), timeout).pipe(
-            Effect.andThen(pme => InternalMessage.FromProtocolMessageEffect(
+            Effect.andThen(pme => Effect.succeed(InternalMessage.FromProtocolMessageEffect(
                 pme, self.mpo, self.protocol
-            )),
+            ))),
             Effect.mapError(e => to_internal_message_protocol_error(e, self))
         )
     }

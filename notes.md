@@ -1,3 +1,14 @@
+TODO:
+
+Notes: It actually still is a structural problem and fails even the first time..
+
+-   CleanUp eventlisteners => Get rid of some state <3
+-   Fix Chain message ...
+-   I can yield tagges errors
+-   Aquire/use/release?
+
+We first await (and reject) promise. Then we get around resolving it
+
 # Todo:
 
 -   Generalize Bridge & MP

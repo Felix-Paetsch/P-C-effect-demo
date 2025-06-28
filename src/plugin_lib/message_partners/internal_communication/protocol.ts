@@ -1,8 +1,8 @@
 import { Effect, Schema } from "effect";
-import { ProtocolErrorN, ProtocolErrorR, ProtocolMessage, ProtocolError, ProtocolMessageT, Protocol } from "../../../../../messaging/src/protocols/protocol";
-import { MessagePartnerObject } from "../../message_partner_object";
-import { Json } from "../../../../../messaging/src/base/message";
-import { EnvironmentT } from "../../../../../messaging/src/base/environment";
+import { ProtocolErrorN, ProtocolErrorR, ProtocolMessage, ProtocolError, ProtocolMessageT, Protocol } from "../../../../messaging/src/protocols/protocol";
+import { MessagePartnerObject } from "../message_partner_object";
+import { Json } from "../../../../messaging/src/base/message";
+import { EnvironmentT } from "../../../../messaging/src/base/environment";
 import { get_message_partner_object } from "./tools";
 import { InternalMessage } from "./internal_message";
 
@@ -97,27 +97,19 @@ export class InternalCommunicationProtocol extends Protocol<InternalMessageResul
     ): Effect.Effect<InternalMessageResult, CommunicationErrorN, EnvironmentT> {
         const self = this;
         return Effect.gen(function* (_) {
-            const env = yield* _(EnvironmentT);
-
-            return self.send_first_message(
+            const pme = yield* self.send_first_message(
                 mpo.message_partner.address,
                 Schema.encodeSync(InternalMessageProtocolDataSchema)({
                     mpo_ident: mpo.ident,
                     internal_message_protocol_name,
                     protocol_data: data
                 }), timeout
-            ).pipe(
-                Effect.andThen(pme => Effect.gen(function* (_) {
-                    const env = yield* _(EnvironmentT);
-                    return pme.pipe(
-                        Effect.provideService(EnvironmentT, env)
-                    );
-                })),
-                Effect.andThen(pme => InternalMessage.FromProtocolMessageEffect(pme, mpo, internal_message_protocol_name)),
-                Effect.mapError(e => to_internal_message_protocol_error(e)),
-                Effect.provideService(EnvironmentT, env)
             )
-        })
+
+            return InternalMessage.FromProtocolMessageEffect(pme, mpo, internal_message_protocol_name)
+        }).pipe(
+            Effect.mapError(e => to_internal_message_protocol_error(e))
+        )
     }
 
     get on_first_request(): Effect.Effect<void, ProtocolError, ProtocolMessageT | EnvironmentT> {

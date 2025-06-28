@@ -1,10 +1,9 @@
 import { Context, Effect, ParseResult, pipe, Schema } from "effect";
 import { MessagePartner } from "./message_partner/message_partner";
-import { CommunicationError, CommunicationErrorN, CommunicationErrorR, InternalCommunication } from "./internal_communication/internal_messages/protocol";
+import { CommunicationError, CommunicationErrorN, CommunicationErrorR, InternalCommunication } from "./internal_communication/protocol";
 import { EnvironmentT } from "../../../messaging/src/base/environment";
-import { InternalMessage } from "./internal_communication/internal_messages/internal_message";
+import { InternalMessage } from "./internal_communication/internal_message";
 import { Json } from "../../../messaging/src/base/message";
-import { CommandProtocol } from "./internal_communication/command_protocol";
 
 export const MessagePartnerObjectIdentStruct = Schema.Struct({
     message_partner_uuid: Schema.String,
@@ -44,34 +43,12 @@ export class MessagePartnerObject {
         return this.removed || this.message_partner.is_removed();
     }
 
-    protected static _protocols: CommandProtocol<any>[] = [];
-    protected static get protocols(): CommandProtocol<any>[] {
-        if (this.constructor === MessagePartnerObject) {
-            return this._protocols;
-        }
-
-        return this._protocols.concat(Object.getPrototypeOf(
-            this.constructor
-        ).protocols);
-    }
-
-    static _register_protocol(protocol: CommandProtocol<any>) {
-        this._protocols.push(protocol);
-    }
-
     _run_protocol(protocol_name: string, data: Json): Effect.Effect<any, CommunicationError, EnvironmentT> {
         const self = this;
-        return Effect.gen(function* (_) {
-            const protocol = MessagePartnerObject.protocols.find(p => p.name === protocol_name);
-            if (protocol) {
-                return yield* protocol.run(self, data);
-            }
-
-            return yield* Effect.fail(new CommunicationErrorN({
-                message: `Unknown protocol: ${protocol_name}`,
-                data: { protocol: protocol_name }
-            }));
-        });
+        return Effect.fail(new CommunicationErrorN({
+            message: `Unknown protocol: ${protocol_name}`,
+            data: { protocol: protocol_name }
+        }));
     }
 
     _send_first_internal_message(protocol: string, data?: Json, timeout?: number): Effect.Effect<
@@ -83,15 +60,6 @@ export class MessagePartnerObject {
     }
 
     _recieve_internal_message(protocol_name: string, data: Json, im: InternalMessage): Effect.Effect<void, CommunicationError, EnvironmentT> {
-        const protocol = MessagePartnerObject.protocols.find(p => p.name === protocol_name);
-        if (protocol) {
-            return protocol.recieve(this, data, im);
-        }
-
-        return this._recieve_internal_message_no_protocol(protocol_name, data, im);
-    }
-
-    _recieve_internal_message_no_protocol(protocol_name: string, data: Json, im: InternalMessage): Effect.Effect<void, CommunicationError, EnvironmentT> {
         return Effect.fail(new CommunicationErrorR({
             message: `Unknown protocol: ${protocol_name}`,
             data: { protocol: protocol_name },
@@ -118,6 +86,7 @@ export class MessagePartnerObject {
     );
 
     static fromExistingMessagePartnerObject(mpo: MessagePartnerObject, uuid: string) {
+        console.log("CREATE", uuid);
         return new this(mpo.message_partner, uuid);
     }
 }
