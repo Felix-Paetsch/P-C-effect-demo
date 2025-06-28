@@ -6,11 +6,11 @@ import { InternalMessage } from "../internal_communication/internal_message";
 import { CommunicationError, CommunicationErrorR } from "../internal_communication/protocol";
 
 export class Bridge extends MessagePartnerObject {
-    send(data: Json) {
+    send(data: Json): Effect.Effect<void, CommunicationError, EnvironmentT> {
         return this._send_first_internal_message("send_bridge", data);
     }
 
-    _recieve_internal_message_no_protocol(
+    _recieve_internal_message(
         protocol_name: string,
         data: Json, im: InternalMessage
     ): Effect.Effect<void, CommunicationError, EnvironmentT> {

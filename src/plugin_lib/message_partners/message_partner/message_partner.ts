@@ -2,7 +2,7 @@ import { Context, Option, Effect, Schema } from "effect";
 import { Address } from "../../../../messaging/src/base/address";
 import { v4 as uuidv4 } from "uuid";
 import { MessagePartnerObject } from "../message_partner_object";
-import { createMpo, receiveMpo, MPOCommand } from "./create_mpo";
+import { createMpo, receiveMpo } from "./create_mpo";
 import { CommunicationError, CommunicationErrorR } from "../internal_communication/protocol";
 import { Json } from "../../../../messaging/src/base/message";
 import { EnvironmentT } from "../../../../messaging/src/base/environment";

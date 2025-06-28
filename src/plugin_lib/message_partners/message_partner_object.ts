@@ -1,6 +1,6 @@
 import { Context, Effect, ParseResult, pipe, Schema } from "effect";
 import { MessagePartner } from "./message_partner/message_partner";
-import { CommunicationError, CommunicationErrorN, CommunicationErrorR, InternalCommunication } from "./internal_communication/protocol";
+import { CommunicationError, CommunicationErrorR, InternalCommunication } from "./internal_communication/protocol";
 import { EnvironmentT } from "../../../messaging/src/base/environment";
 import { InternalMessage } from "./internal_communication/internal_message";
 import { Json } from "../../../messaging/src/base/message";
@@ -43,14 +43,6 @@ export class MessagePartnerObject {
         return this.removed || this.message_partner.is_removed();
     }
 
-    _run_protocol(protocol_name: string, data: Json): Effect.Effect<any, CommunicationError, EnvironmentT> {
-        const self = this;
-        return Effect.fail(new CommunicationErrorN({
-            message: `Unknown protocol: ${protocol_name}`,
-            data: { protocol: protocol_name }
-        }));
-    }
-
     _send_first_internal_message(protocol: string, data?: Json, timeout?: number): Effect.Effect<
         Effect.Effect<InternalMessage, CommunicationError, EnvironmentT>,
         CommunicationError,
@@ -86,7 +78,6 @@ export class MessagePartnerObject {
     );
 
     static fromExistingMessagePartnerObject(mpo: MessagePartnerObject, uuid: string) {
-        console.log("CREATE", uuid);
         return new this(mpo.message_partner, uuid);
     }
 }

@@ -34,11 +34,8 @@ export function createMpo<T extends MessagePartnerObject>(
     data: Json = null
 ): Effect.Effect<any, CommunicationError, EnvironmentT> {
     return Effect.gen(function* () {
-        console.log("SEND 1A");
         const imE = yield* messagePartner._send_first_internal_message("create_mpo", { obj_cmd: command, data });
-        console.log("IN betweeeeeen 1/2");
         const im = yield* imE;
-        console.log("RECIEVED 2B");
 
         const uuid = im.data as string;
         if (!uuid) return yield* Effect.fail(new CommunicationErrorR({ message: "Expected uuid", Message: im }));
@@ -48,11 +45,7 @@ export function createMpo<T extends MessagePartnerObject>(
             return yield* Effect.fail(new CommunicationErrorR({ message: "Unknown command", Message: im }));
         }
 
-        // Send 3A
-        console.log("SEND 3A");
-        const r = yield* im.respond("OK", 50000);
-
-        console.log("CREATE A");
+        yield* im.respond("OK", 50000);
         return mpoClass.senderClass.fromExistingMessagePartnerObject(messagePartner, uuid);
     });
 }
@@ -63,7 +56,6 @@ export function receiveMpo(
     im: InternalMessage
 ): Effect.Effect<void, CommunicationError, EnvironmentT> {
     return Effect.gen(function* () {
-        console.log("RECIEVED 1B");
 
         const parsed = data as any;
         const obj_cmd = parsed?.obj_cmd;
@@ -87,12 +79,7 @@ export function receiveMpo(
         }
 
         const uuid = uuidv4();
-        console.log("SEND 2A");
-        // After this timeout is up, the other thread continues execution for some reason...
-        const r = yield* im.respond(uuid, 50000);
-        yield* r;
-        console.log("RECIEVED 3B");
-
+        yield* im.respond(uuid, 50000);
         const mpo_object = config.receiverClass.fromExistingMessagePartnerObject(messagePartner, uuid);
         cb(mpo_object, parsed.data);
     });

@@ -11,6 +11,7 @@ We first await (and reject) promise. Then we get around resolving it
 
 # Todo:
 
+-   Maybe allow a 2nd message partner as input for creating a first one (?) or better a function: "message_partner_pair"
 -   Generalize Bridge & MP
 -   Remove Message Partners & MPOs
 -   Every Pair of Message partners could have id_1 and id_2.. and then their id as MOPs can again be the same..

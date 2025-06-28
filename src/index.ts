@@ -1,10 +1,9 @@
-import { EnvironmentT } from "../messaging/src/base/environment";
-import { PluginEffect } from "./plugin_lib/plugin_effect";
-import { Effect, Deferred } from "effect";
-import { createLocalEnvironment } from "../messaging/src/base/environment";
+import { Effect } from "effect";
+import { createLocalEnvironment, EnvironmentT } from "../messaging/src/base/environment";
 import { LocalAddress } from "../messaging/src/base/address";
-import { MessagePartner } from "./plugin_lib/message_partners/message_partner/message_partner";
 import { InternalCommunication } from "./plugin_lib/message_partners/internal_communication/protocol";
+import { MessagePartner } from "./plugin_lib/message_partners/message_partner/message_partner";
+import { PluginEffect } from "./plugin_lib/plugin_effect";
 
 const mp1 = new MessagePartner(new LocalAddress("plugin2"), "test");
 const mp2 = new MessagePartner(new LocalAddress("plugin1"), "test"); //, mp1.uuid);
@@ -16,9 +15,9 @@ const plugin1: PluginEffect = Effect.gen(function* (_) {
     // ===============================================================
 
     mp1.on_bridge((bridge) => {
-        console.log("Logging from Plugin 1", bridge);
+        console.log("ON BRIDGE");
         bridge.on((data) => {
-            console.log("Logging from Plugin 1", data);
+            console.log(data + ", and I must scream");
         });
     })
 }).pipe(Effect.tapError(e => Effect.logError(e)));
@@ -29,8 +28,22 @@ const plugin2: PluginEffect = Effect.gen(function* (_) {
 
     // ===============================================================
     const a = yield* mp2.bridge();
-    a.send("Hello");
+    yield* a.send("I have no mouth");
 }).pipe(Effect.tapError(e => Effect.logError(e)));
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 const programm1 = plugin1.pipe(Effect.provideServiceEffect(EnvironmentT, createLocalEnvironment(
     new LocalAddress("plugin1")
@@ -48,6 +61,5 @@ Effect.all(
     concurrency: "unbounded"
 }
 ).pipe(
-    // Basically: We shouldn't need to resort to timeouts, thus shouldn't need to result to async
     Effect.runSync
 );
