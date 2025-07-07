@@ -11,6 +11,7 @@ Notes: It actually still is a structural problem and fails even the first time..
     wiggled exponential decay remove requests
     remove locally
 -   Create object ~ cleanup => Clean Signal implementation
+-   Remove callbacks
 
 How do other places use effect?
 

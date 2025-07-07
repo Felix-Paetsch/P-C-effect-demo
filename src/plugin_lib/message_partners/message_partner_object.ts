@@ -4,6 +4,8 @@ import { CommunicationError, CommunicationErrorR, InternalCommunication } from "
 import { EnvironmentT } from "../../../messaging/src/base/environment";
 import { InternalMessage } from "./internal_communication/internal_message";
 import { Json } from "../../../messaging/src/base/message";
+import applyRemovePrototypeModifier from "./mpo_commands.ts/remove";
+import { instanceOf } from "effect/Schema";
 
 export class MPOInitializationError extends Data.TaggedError("MPOInitializationError")<{
     message_partner_uuid: string;
@@ -19,6 +21,13 @@ export const MessagePartnerObjectIdentStruct = Schema.Struct({
 export type MessagePartnerObjectIdent = Schema.Schema.Type<typeof MessagePartnerObjectIdentStruct>;
 
 export class MessagePartnerObject {
+    private static classCommands = new Map<Function, {
+        [key: string]: {
+            command: string;
+            on_first_request: (mpo: any, im: InternalMessage, data: Json) => Effect.Effect<void, CommunicationError>;
+        }
+    }>();
+
     constructor(
         readonly message_partner: MessagePartner,
         readonly uuid: string
@@ -34,21 +43,9 @@ export class MessagePartnerObject {
         }
     }
 
-    remove(): Effect.Effect<void, never, never> {
-        return Effect.gen(this, function* () {
-            this.removed = true;
-            return yield* this._send_first_internal_message("remove_mpo").pipe(Effect.ignore);
-        })
-    }
     protected removed: boolean = false;
     is_removed(): boolean {
         return this.removed || this.message_partner.is_removed();
-    }
-    protected on_remove_msg(im: InternalMessage): Effect.Effect<void, CommunicationError> {
-        return Effect.gen(this, function* () {
-            this.removed = true;
-            return yield* im.respond("OK");
-        })
     }
 
     _send_first_internal_message(protocol: string, data?: Json, timeout?: number): Effect.Effect<
@@ -61,8 +58,9 @@ export class MessagePartnerObject {
     }
 
     _recieve_internal_message(protocol_name: string, data: Json, im: InternalMessage): Effect.Effect<void, CommunicationError> {
-        if (protocol_name === "remove_mpo") {
-            return this.on_remove_msg(im);
+        const command = (this.constructor as typeof MessagePartnerObject).get_command(protocol_name);
+        if (command) {
+            return command.on_first_request(this, im, data);
         }
 
         return Effect.fail(new CommunicationErrorR({
@@ -77,7 +75,7 @@ export class MessagePartnerObject {
             message_partner: Schema.suspend(() => Schema.instanceOf(MessagePartner)),
             uuid: Schema.String
         }),
-        Schema.instanceOf(MessagePartnerObject),
+        Schema.instanceOf(this),
         {
             encode: (mpo: MessagePartnerObject, _, __) => Effect.succeed({
                 message_partner: mpo.message_partner,
@@ -115,9 +113,57 @@ export class MessagePartnerObject {
         }
     );
 
-    static fromExistingMessagePartnerObject(mpo: MessagePartnerObject, uuid: string) {
-        return new this(mpo.message_partner, uuid);
+    static fromExistingMessagePartnerObject(mpo: MessagePartnerObject, uuid: string): Effect.Effect<MessagePartnerObject, MPOInitializationError> {
+        return Schema.decode(this.makeMPO)({
+            message_partner: mpo.message_partner,
+            uuid: uuid
+        }).pipe(
+            Effect.mapError(e => new MPOInitializationError({
+                message_partner_uuid: mpo.message_partner.uuid,
+                uuid: uuid,
+                error: e
+            }))
+        );
+    }
+
+    // COMMANDS
+    private static _initializeClassCommands(classConstructor: Function): void {
+        if (!MessagePartnerObject.classCommands.has(classConstructor)) {
+            MessagePartnerObject.classCommands.set(classConstructor, {});
+        }
+    }
+
+    static add_command<T extends MessagePartnerObject = MessagePartnerObject>(command: {
+        command: string;
+        on_first_request: (mpo: T, im: InternalMessage, data: Json) => Effect.Effect<void, CommunicationError>;
+    }): void {
+        MessagePartnerObject._initializeClassCommands(this);
+        const classCommandMap = MessagePartnerObject.classCommands.get(this)!;
+        classCommandMap[command.command] = command;
+    }
+
+    static get_command(commandName: string): {
+        command: string;
+        on_first_request: (mpo: any, im: InternalMessage, data: Json) => Effect.Effect<void, CommunicationError>;
+    } | undefined {
+        let currentClass: Function = this;
+        while (currentClass && currentClass !== Function.prototype) {
+            const classCommandMap = MessagePartnerObject.classCommands.get(currentClass);
+            if (classCommandMap && classCommandMap[commandName]) {
+                return classCommandMap[commandName];
+            }
+            currentClass = Object.getPrototypeOf(currentClass);
+        }
+        return undefined;
+    }
+
+    static get commands() {
+        MessagePartnerObject._initializeClassCommands(this);
+        const classCommandMap = MessagePartnerObject.classCommands.get(this)!;
+        return Object.values(classCommandMap);
     }
 }
 
 export class MessagePartnerObjectT extends Context.Tag("MessagePartnerObjectT")<MessagePartnerObjectT, MessagePartnerObject>() { }
+
+applyRemovePrototypeModifier(MessagePartnerObject);

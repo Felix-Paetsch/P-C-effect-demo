@@ -1,86 +1,82 @@
-import { MessagePartnerObject } from "../message_partner_object";
-import { Bridge } from "../bridge/bridge";
-import { Effect } from "effect";
+import { MessagePartnerObject, MPOInitializationError } from "../message_partner_object";
+import { Effect, Either } from "effect";
 import { CommunicationError, CommunicationErrorR } from "../internal_communication/protocol";
 import { Json } from "../../../../messaging/src/base/message";
-import { EnvironmentT } from "../../../../messaging/src/base/environment";
 import { InternalMessage } from "../internal_communication/internal_message";
 import { v4 as uuidv4 } from 'uuid';
-
-export const MPO_CONFIGS = [
-    {
-        command: "create_message_partner",
-        senderClass: MessagePartnerObject,
-        receiverClass: MessagePartnerObject,
-        create_method_name: "branch"
-    },
-    {
-        command: "create_bridge",
-        senderClass: Bridge,
-        receiverClass: Bridge,
-        create_method_name: "bridge"
-    }
-] as const;
-
-export type MPOCommand = typeof MPO_CONFIGS[number]["command"];
-
-export function getClassForCommand(command: MPOCommand) {
-    return MPO_CONFIGS.find(config => config.command === command) || null;
-}
+import { MessagePartner } from "./message_partner";
 
 export function createMpo<T extends MessagePartnerObject>(
-    messagePartner: T,
-    command: MPOCommand,
+    messagePartner: MessagePartner,
+    senderClass: { fromExistingMessagePartnerObject: (mpo: MessagePartner, uuid: string) => Effect.Effect<T, MPOInitializationError> },
+    command: string,
     data: Json = null
-): Effect.Effect<any, CommunicationError> {
+): Effect.Effect<T, CommunicationError> {
     return Effect.gen(function* () {
-        const imE = yield* messagePartner._send_first_internal_message("create_mpo", { obj_cmd: command, data });
+        console.log("EEE GET TO HERE");
+        const imE = yield* messagePartner._send_first_internal_message(command, data);
+        console.log("DDD GET TO HERE");
         const im = yield* imE;
+        console.log("CCC GET TO HERE");
 
         const uuid = im.data as string;
-        if (!uuid) return yield* new CommunicationErrorR({ message: "Expected uuid", Message: im });
+        if (!uuid || typeof uuid !== "string") return yield* new CommunicationErrorR({ message: "Expected uuid", Message: im });
 
-        const mpoClass = getClassForCommand(command);
-        if (!mpoClass) {
-            return yield* new CommunicationErrorR({ message: "Unknown command", Message: im });
+        const mpoE = yield* senderClass.fromExistingMessagePartnerObject(messagePartner, uuid).pipe(
+            Effect.either
+        );
+
+        console.log("BBB GET TO HERE");
+        if (Either.isLeft(mpoE)) {
+            return yield* new CommunicationErrorR({
+                message: mpoE.left.message,
+                error: mpoE.left.error,
+                data,
+                Message: im
+            });
         }
 
-        yield* im.respond("OK", 50000);
-        return mpoClass.senderClass.fromExistingMessagePartnerObject(messagePartner, uuid);
-    });
+        const mpo = mpoE.right;
+
+        console.log("AAA GET TO HERE");
+        const _ = yield* im.respond("OK", 10000).pipe(
+            Effect.tapError(() => mpo.remove()),
+            Effect.flatMap((imE) => imE.pipe(
+                Effect.tapError(() => mpo.remove())
+            ))
+        )
+
+        return mpo;
+    })
 }
 
-export function receiveMpo(
-    messagePartner: any,
-    data: Json,
-    im: InternalMessage
+export function receiveMpo<T extends MessagePartnerObject>(
+    messagePartner: MessagePartner,
+    im: InternalMessage,
+    receiverClass: { fromExistingMessagePartnerObject: (mpo: MessagePartner, uuid: string) => Effect.Effect<T, MPOInitializationError> },
+    cb: (mpo: T) => void
 ): Effect.Effect<void, CommunicationError> {
     return Effect.gen(function* () {
-
-        const parsed = data as any;
-        const obj_cmd = parsed?.obj_cmd;
-
-        // Loop over configs to find matching command and callback
-        const config = MPO_CONFIGS.find(c => c.command === obj_cmd);
-        if (!config) {
-            return yield* new CommunicationErrorR({
-                message: "Unknown creation command",
-                Message: im
-            });
-        }
-
-        const callbackName = `${config.create_method_name}_cb`;
-        const cb = messagePartner[callbackName];
-        if (!cb) {
-            return yield* new CommunicationErrorR({
-                message: "No callback found",
-                Message: im
-            });
-        }
-
         const uuid = uuidv4();
-        yield* im.respond(uuid, 50000);
-        const mpo_object = config.receiverClass.fromExistingMessagePartnerObject(messagePartner, uuid);
-        cb(mpo_object, parsed.data);
+        console.log("!!!!!!!!!!!!!1111111");
+        const okResponseE = yield* im.respond(uuid, 50000);
+        console.log("!!!!!!!!!!!!!2222222");
+        const okResponse = yield* okResponseE;
+        console.log("!!!!!!!!!!!!!3333333");
+        const mpo_object = yield* receiverClass.fromExistingMessagePartnerObject(messagePartner, uuid).pipe(
+            Effect.either
+        );
+
+        if (Either.isLeft(mpo_object)) {
+            return yield* new CommunicationErrorR({
+                message: mpo_object.left.message,
+                error: mpo_object.left.error,
+                Message: okResponse
+            });
+        } else {
+            yield* okResponse.respond("OK", 0);
+        }
+
+        cb(mpo_object.right);
     });
-} 
+}

@@ -1,31 +1,27 @@
-import { MessagePartnerObject } from "../message_partner_object";
+import { MessagePartnerObject, MPOInitializationError } from "../message_partner_object";
 import { Json } from "../../../../messaging/src/base/message";
 import { Effect } from "effect";
 import { InternalMessage } from "../internal_communication/internal_message";
-import { CommunicationError, CommunicationErrorR } from "../internal_communication/protocol";
+import { CommunicationError } from "../internal_communication/protocol";
 
 export class Bridge extends MessagePartnerObject {
     send(data: Json): Effect.Effect<void, CommunicationError> {
         return this._send_first_internal_message("send_bridge", data);
     }
 
-    _recieve_internal_message(
-        protocol_name: string,
-        data: Json, im: InternalMessage
-    ): Effect.Effect<void, CommunicationError> {
-        if (protocol_name === "send_bridge") {
-            return Effect.suspend(() => Effect.succeed(this.on_message_cb(data)));
-        }
-
-        return Effect.fail(new CommunicationErrorR({
-            message: `Unknown protocol: ${protocol_name}`,
-            data: { protocol: protocol_name },
-            Message: im
-        }));
+    __on_message_cb: (data: Json) => void = () => { };
+    on(cb: (data: Json) => void) {
+        this.__on_message_cb = cb;
     }
 
-    private on_message_cb: (data: Json) => void = () => { };
-    on(cb: (data: Json) => void) {
-        this.on_message_cb = cb;
+    static fromExistingMessagePartnerObject(mpo: MessagePartnerObject, uuid: string): Effect.Effect<Bridge, MPOInitializationError> {
+        return super.fromExistingMessagePartnerObject(mpo, uuid) as Effect.Effect<Bridge, MPOInitializationError>;
     }
 }
+
+Bridge.add_command({
+    command: "send_bridge",
+    on_first_request: (mp: Bridge, im: InternalMessage, data: Json) => {
+        return Effect.succeed(mp.__on_message_cb(data));
+    }
+});
