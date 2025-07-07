@@ -3,14 +3,16 @@ TODO:
 Notes: It actually still is a structural problem and fails even the first time..
 
 -   CleanUp eventlisteners => Get rid of some state <3
--   Fix Chain message ...
 -   Aquire/use/release?
 -   Effect.fn
 -   Config
 -   User Layers (Env might be a layer...)
 -   FIx communication channels
--   delete MPOs
--   Errors on message partner with existing id
+-   handle removes for MPOs
+    wiggled exponential decay remove requests
+    remove locally
+-   Message Partnes and so on should have an Env => in general get rid of many env conditions (?)
+-   Create object cleanup => Clean Signal implementation
 
 How do other places use effect?
 

@@ -1,9 +1,15 @@
-import { Context, Effect, ParseResult, pipe, Schema } from "effect";
+import { Context, Effect, ParseResult, pipe, Schema, Option, Data } from "effect";
 import { MessagePartner } from "./message_partner/message_partner";
 import { CommunicationError, CommunicationErrorR, InternalCommunication } from "./internal_communication/protocol";
 import { EnvironmentT } from "../../../messaging/src/base/environment";
 import { InternalMessage } from "./internal_communication/internal_message";
 import { Json } from "../../../messaging/src/base/message";
+
+export class MPOInitializationError extends Data.TaggedError("MPOInitializationError")<{
+    message_partner_uuid: string;
+    uuid: string;
+    error: Error;
+}> { }
 
 export const MessagePartnerObjectIdentStruct = Schema.Struct({
     message_partner_uuid: Schema.String,
@@ -13,23 +19,12 @@ export const MessagePartnerObjectIdentStruct = Schema.Struct({
 export type MessagePartnerObjectIdent = Schema.Schema.Type<typeof MessagePartnerObjectIdentStruct>;
 
 export class MessagePartnerObject {
-    remove() {
-        throw new Error("Method not implemented.");
-    }
-    protected removed: boolean = false;
     constructor(
-        protected _message_partner: MessagePartner,
-        protected _uuid: string
+        readonly message_partner: MessagePartner,
+        readonly uuid: string
     ) {
-        this._message_partner?.register_message_partner_object(this);
-    }
-
-    get message_partner(): MessagePartner {
-        return this._message_partner;
-    }
-
-    get uuid(): string {
-        return this._uuid;
+        // The ? is for MessagePartner initialization
+        this.message_partner?.register_message_partner_object(this);
     }
 
     get ident(): MessagePartnerObjectIdent {
@@ -39,8 +34,21 @@ export class MessagePartnerObject {
         }
     }
 
+    remove(): Effect.Effect<void, never, EnvironmentT> {
+        return Effect.gen(this, function* () {
+            this.removed = true;
+            return yield* this._send_first_internal_message("remove_mpo").pipe(Effect.ignore);
+        })
+    }
+    protected removed: boolean = false;
     is_removed(): boolean {
         return this.removed || this.message_partner.is_removed();
+    }
+    protected on_remove_msg(im: InternalMessage): Effect.Effect<void, CommunicationError, EnvironmentT> {
+        return Effect.gen(this, function* () {
+            this.removed = true;
+            return yield* im.respond("OK");
+        })
     }
 
     _send_first_internal_message(protocol: string, data?: Json, timeout?: number): Effect.Effect<
@@ -52,12 +60,40 @@ export class MessagePartnerObject {
     }
 
     _recieve_internal_message(protocol_name: string, data: Json, im: InternalMessage): Effect.Effect<void, CommunicationError, EnvironmentT> {
+        if (protocol_name === "remove_mpo") {
+            return this.on_remove_msg(im);
+        }
+
         return Effect.fail(new CommunicationErrorR({
             message: `Unknown protocol: ${protocol_name}`,
             data: { protocol: protocol_name },
             Message: im
         }));
     }
+
+    static makeMPO = Schema.transformOrFail(
+        Schema.Struct({
+            message_partner: Schema.suspend(() => Schema.instanceOf(MessagePartner)),
+            uuid: Schema.String
+        }),
+        Schema.instanceOf(MessagePartnerObject),
+        {
+            encode: (mpo: MessagePartnerObject, _, __) => Effect.succeed({
+                message_partner: mpo.message_partner,
+                uuid: mpo.uuid
+            }),
+            decode: ({ uuid, message_partner }, _, ast) => Effect.gen(function* () {
+                if (message_partner.is_removed()) {
+                    return yield* ParseResult.fail(new ParseResult.Type(ast, { uuid, message_partner }, "Message partner is no longer active"));
+                }
+                if (Option.isNone(message_partner.get_message_partner_object(uuid))) {
+                    return yield* ParseResult.fail(new ParseResult.Type(ast, { uuid, message_partner }, "Uuid already exists on message partner"));
+                }
+                const mpo = new MessagePartnerObject(message_partner, uuid);
+                return mpo;
+            })
+        }
+    )
 
     static MessagePartnerObjectFromIdent = Schema.transformOrFail(
         MessagePartnerObjectIdentStruct,

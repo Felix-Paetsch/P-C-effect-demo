@@ -1,7 +1,7 @@
-import { Context, Option, Effect, Schema } from "effect";
+import { Context, Option, Effect, Schema, ParseResult, pipe } from "effect";
 import { Address } from "../../../../messaging/src/base/address";
 import { v4 as uuidv4 } from "uuid";
-import { MessagePartnerObject } from "../message_partner_object";
+import { MessagePartnerObject, MPOInitializationError } from "../message_partner_object";
 import { createMpo, receiveMpo } from "./create_mpo";
 import { CommunicationError, CommunicationErrorR } from "../internal_communication/protocol";
 import { Json } from "../../../../messaging/src/base/message";
@@ -27,19 +27,18 @@ export class MessagePartner extends MessagePartnerObject {
 
     constructor(
         readonly address: Address,
-        protected _uuid: string = uuidv4()
+        uuid: string = uuidv4()
     ) {
-        super(null as any, _uuid);
-        this._message_partner = this;
-
-        // Todo: What if accidentally we created it multiple times at the same place?
-        const existing_mp = MessagePartner.get_message_partner(this._uuid);
-        if (Option.isSome(existing_mp)) {
-            existing_mp.value._uuid = this._uuid + "_1";
-            this._uuid = this._uuid + "_2";
-        }
-
+        super(null as any, uuid);
+        (this.message_partner as any) = this;
         MessagePartner.message_partners.push(this);
+    }
+
+    remove() {
+        return pipe(
+            Effect.all(this.message_partner_objects.map(mpo => mpo.remove())),
+            Effect.andThen(super.remove())
+        );
     }
 
     is_removed(): boolean {
@@ -53,13 +52,10 @@ export class MessagePartner extends MessagePartnerObject {
     }
 
     get_message_partner_object(uuid: string): Option.Option<MessagePartnerObject> {
-        if (uuid.endsWith("_1")) {
-            uuid = uuid.slice(0, -2) + "_2";
-        } else if (uuid.endsWith("_2")) {
-            uuid = uuid.slice(0, -2) + "_1";
+        if (uuid.charAt(uuid.length - 2) === "_" && uuid.slice(0, -2) === this.uuid.slice(0, -2)) {
+            return Option.some(this);
         }
-
-        if (this.uuid === uuid) {
+        if (uuid == this.uuid) {
             return Option.some(this);
         }
 
@@ -95,6 +91,47 @@ export class MessagePartner extends MessagePartnerObject {
     protected bridge_cb: null | ((receiverClass: Bridge, data?: Json) => void) = null;
     on_bridge(callback: null | ((receiverClass: Bridge, data?: Json) => void)): void {
         this.bridge_cb = callback;
+    }
+
+    static make = Schema.transformOrFail(
+        Schema.Struct({
+            address: Schema.instanceOf(Address),
+            uuid: Schema.String
+        }),
+        Schema.instanceOf(MessagePartner),
+        {
+            encode: (mpo: MessagePartner, _, __) => Effect.succeed({
+                address: mpo.address,
+                uuid: mpo.uuid
+            }),
+            decode: ({ uuid, address }, _, ast) => pipe(
+                MessagePartner.get_message_partner(uuid),
+                Effect.flip,
+                Effect.as(new MessagePartner(address, uuid)),
+                Effect.catchAll(e => {
+                    return ParseResult.fail(new ParseResult.Type(ast, { uuid, address }, "Message partner already exists"));
+                })
+            )
+        }
+    )
+
+    static makeLocalPair(address1: Address, address2: Address, uuid = uuidv4()): Effect.Effect<[MessagePartner, MessagePartner], MPOInitializationError> {
+        return Effect.gen(this, function* () {
+            for (const mp of this.message_partners) {
+                if (mp.uuid === uuid || mp.uuid === uuid + "_1" || mp.uuid === uuid + "_2") {
+                    return yield* new MPOInitializationError({
+                        message_partner_uuid: uuid,
+                        uuid: uuid,
+                        error: new Error("Message partners with UUID already exist")
+                    })
+                }
+            }
+
+            return [
+                new MessagePartner(address1, uuid + "_1"),
+                new MessagePartner(address2, uuid + "_2")
+            ] as [MessagePartner, MessagePartner];
+        })
     }
 }
 

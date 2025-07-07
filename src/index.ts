@@ -5,8 +5,7 @@ import { InternalCommunication } from "./plugin_lib/message_partners/internal_co
 import { MessagePartner } from "./plugin_lib/message_partners/message_partner/message_partner";
 import { PluginEffect } from "./plugin_lib/plugin_effect";
 
-const mp1 = new MessagePartner(new LocalAddress("plugin2"), "test");
-const mp2 = new MessagePartner(new LocalAddress("plugin1"), "test"); //, mp1.uuid);
+const [mp2, mp1] = MessagePartner.makeLocalPair(new LocalAddress("plugin1"), new LocalAddress("plugin2")).pipe(Effect.runSync);
 
 const plugin1: PluginEffect = Effect.gen(function* () {
     const env = yield* EnvironmentT;
