@@ -5,7 +5,10 @@ import { InternalCommunication } from "./plugin_lib/message_partners/internal_co
 import { MessagePartner } from "./plugin_lib/message_partners/message_partner/message_partner";
 import { PluginEffect } from "./plugin_lib/plugin_effect";
 
-const [mp2, mp1] = MessagePartner.makeLocalPair(new LocalAddress("plugin1"), new LocalAddress("plugin2")).pipe(Effect.runSync);
+const env1 = createLocalEnvironment(new LocalAddress("plugin1")).pipe(Effect.runSync);
+const env2 = createLocalEnvironment(new LocalAddress("plugin2")).pipe(Effect.runSync);
+
+const [mp2, mp1] = MessagePartner.makeLocalPair(env1, env2).pipe(Effect.runSync);
 
 const plugin1: PluginEffect = Effect.gen(function* () {
     const env = yield* EnvironmentT;
@@ -43,13 +46,9 @@ const plugin2: PluginEffect = Effect.gen(function* () {
 
 
 
-const programm1 = plugin1.pipe(Effect.provideServiceEffect(EnvironmentT, createLocalEnvironment(
-    new LocalAddress("plugin1")
-)));
+const programm1 = plugin1.pipe(Effect.provideService(EnvironmentT, env1));
 
-const programm2 = plugin2.pipe(Effect.provideServiceEffect(EnvironmentT, createLocalEnvironment(
-    new LocalAddress("plugin2")
-)));
+const programm2 = plugin2.pipe(Effect.provideService(EnvironmentT, env2));
 
 Effect.all(
     [

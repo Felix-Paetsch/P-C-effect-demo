@@ -5,7 +5,7 @@ import { MessagePartnerObject, MPOInitializationError } from "../message_partner
 import { createMpo, receiveMpo } from "./create_mpo";
 import { CommunicationError, CommunicationErrorR } from "../internal_communication/protocol";
 import { Json } from "../../../../messaging/src/base/message";
-import { EnvironmentT } from "../../../../messaging/src/base/environment";
+import { Environment, EnvironmentT } from "../../../../messaging/src/base/environment";
 import { InternalMessage } from "../internal_communication/internal_message";
 import { Bridge } from "../bridge/bridge";
 
@@ -27,6 +27,7 @@ export class MessagePartner extends MessagePartnerObject {
 
     constructor(
         readonly address: Address,
+        readonly env: Environment,
         uuid: string = uuidv4()
     ) {
         super(null as any, uuid);
@@ -107,7 +108,10 @@ export class MessagePartner extends MessagePartnerObject {
             decode: ({ uuid, address }, _, ast) => pipe(
                 MessagePartner.get_message_partner(uuid),
                 Effect.flip,
-                Effect.as(new MessagePartner(address, uuid)),
+                Effect.andThen(() => Effect.gen(function* () {
+                    const env = yield* EnvironmentT;
+                    return new MessagePartner(address, env, uuid);
+                })),
                 Effect.catchAll(e => {
                     return ParseResult.fail(new ParseResult.Type(ast, { uuid, address }, "Message partner already exists"));
                 })
@@ -115,7 +119,7 @@ export class MessagePartner extends MessagePartnerObject {
         }
     )
 
-    static makeLocalPair(address1: Address, address2: Address, uuid = uuidv4()): Effect.Effect<[MessagePartner, MessagePartner], MPOInitializationError> {
+    static makeLocalPair(env1: Environment, env2: Environment, uuid = uuidv4()): Effect.Effect<[MessagePartner, MessagePartner], MPOInitializationError> {
         return Effect.gen(this, function* () {
             for (const mp of this.message_partners) {
                 if (mp.uuid === uuid || mp.uuid === uuid + "_1" || mp.uuid === uuid + "_2") {
@@ -128,8 +132,8 @@ export class MessagePartner extends MessagePartnerObject {
             }
 
             return [
-                new MessagePartner(address1, uuid + "_1"),
-                new MessagePartner(address2, uuid + "_2")
+                new MessagePartner(env2.ownAddress, env1, uuid + "_1"),
+                new MessagePartner(env1.ownAddress, env2, uuid + "_2")
             ] as [MessagePartner, MessagePartner];
         })
     }
