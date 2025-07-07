@@ -7,12 +7,10 @@ Notes: It actually still is a structural problem and fails even the first time..
 -   Effect.fn
 -   Config
 -   User Layers (Env might be a layer...)
--   FIx communication channels
--   handle removes for MPOs
+-   handle removes for MPOs better
     wiggled exponential decay remove requests
     remove locally
--   Message Partnes and so on should have an Env => in general get rid of many env conditions (?)
--   Create object cleanup => Clean Signal implementation
+-   Create object ~ cleanup => Clean Signal implementation
 
 How do other places use effect?
 

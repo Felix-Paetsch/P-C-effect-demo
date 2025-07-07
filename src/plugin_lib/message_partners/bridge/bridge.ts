@@ -1,19 +1,18 @@
 import { MessagePartnerObject } from "../message_partner_object";
 import { Json } from "../../../../messaging/src/base/message";
 import { Effect } from "effect";
-import { EnvironmentT } from "../../../../messaging/src/base/environment";
 import { InternalMessage } from "../internal_communication/internal_message";
 import { CommunicationError, CommunicationErrorR } from "../internal_communication/protocol";
 
 export class Bridge extends MessagePartnerObject {
-    send(data: Json): Effect.Effect<void, CommunicationError, EnvironmentT> {
+    send(data: Json): Effect.Effect<void, CommunicationError> {
         return this._send_first_internal_message("send_bridge", data);
     }
 
     _recieve_internal_message(
         protocol_name: string,
         data: Json, im: InternalMessage
-    ): Effect.Effect<void, CommunicationError, EnvironmentT> {
+    ): Effect.Effect<void, CommunicationError> {
         if (protocol_name === "send_bridge") {
             return Effect.suspend(() => Effect.succeed(this.on_message_cb(data)));
         }

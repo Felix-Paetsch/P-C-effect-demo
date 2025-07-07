@@ -34,7 +34,7 @@ export class MessagePartnerObject {
         }
     }
 
-    remove(): Effect.Effect<void, never, EnvironmentT> {
+    remove(): Effect.Effect<void, never, never> {
         return Effect.gen(this, function* () {
             this.removed = true;
             return yield* this._send_first_internal_message("remove_mpo").pipe(Effect.ignore);
@@ -44,7 +44,7 @@ export class MessagePartnerObject {
     is_removed(): boolean {
         return this.removed || this.message_partner.is_removed();
     }
-    protected on_remove_msg(im: InternalMessage): Effect.Effect<void, CommunicationError, EnvironmentT> {
+    protected on_remove_msg(im: InternalMessage): Effect.Effect<void, CommunicationError> {
         return Effect.gen(this, function* () {
             this.removed = true;
             return yield* im.respond("OK");
@@ -52,14 +52,15 @@ export class MessagePartnerObject {
     }
 
     _send_first_internal_message(protocol: string, data?: Json, timeout?: number): Effect.Effect<
-        Effect.Effect<InternalMessage, CommunicationError, EnvironmentT>,
-        CommunicationError,
-        EnvironmentT
+        Effect.Effect<InternalMessage, CommunicationError>,
+        CommunicationError
     > {
-        return InternalCommunication.run_mpo(this, protocol, data, timeout);
+        return InternalCommunication.run_mpo(this, protocol, data, timeout).pipe(
+            Effect.provideService(EnvironmentT, this.message_partner.env)
+        );
     }
 
-    _recieve_internal_message(protocol_name: string, data: Json, im: InternalMessage): Effect.Effect<void, CommunicationError, EnvironmentT> {
+    _recieve_internal_message(protocol_name: string, data: Json, im: InternalMessage): Effect.Effect<void, CommunicationError> {
         if (protocol_name === "remove_mpo") {
             return this.on_remove_msg(im);
         }
@@ -105,6 +106,7 @@ export class MessagePartnerObject {
                 Effect.mapError(e => new ParseResult.Type(
                     ast, ident, `Couln't find message partner`)
                 ),
+                Effect.andThen(mpE => mpE),
                 Effect.andThen(mp => mp.get_message_partner_object(ident.uuid)),
                 Effect.catchTag("NoSuchElementException", e => Effect.fail(new ParseResult.Type(
                     ast, ident, `Couln't find message partner object`)

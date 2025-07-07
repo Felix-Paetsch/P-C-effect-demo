@@ -11,16 +11,13 @@ import { Bridge } from "../bridge/bridge";
 
 export class MessagePartner extends MessagePartnerObject {
     static message_partners: MessagePartner[] = [];
-    static get_message_partner(uuid: string): Option.Option<MessagePartner> {
-        if (uuid.endsWith("_1")) {
-            uuid = uuid.slice(0, -2) + "_2";
-        } else if (uuid.endsWith("_2")) {
-            uuid = uuid.slice(0, -2) + "_1";
-        }
-
-        return Option.fromNullable(MessagePartner.message_partners.find(
-            mp => mp.uuid === uuid && !mp.is_removed()
-        ));
+    static get_message_partner(uuid: string) {
+        return Effect.gen(function* () {
+            const env = yield* EnvironmentT;
+            return Option.fromNullable(MessagePartner.message_partners.find(
+                mp => mp.uuid === uuid && !mp.is_removed() && mp.env === env
+            ));
+        })
     }
 
     private message_partner_objects: MessagePartnerObject[] = [];
@@ -66,7 +63,7 @@ export class MessagePartner extends MessagePartnerObject {
     }
 
     // Protocol routing for receiving messages
-    _recieve_internal_message(protocol_name: string, data: Json, im: InternalMessage): Effect.Effect<void, CommunicationError, EnvironmentT> {
+    _recieve_internal_message(protocol_name: string, data: Json, im: InternalMessage): Effect.Effect<void, CommunicationError> {
         if (protocol_name === "create_mpo") {
             return receiveMpo(this, data, im);
         }
@@ -78,7 +75,7 @@ export class MessagePartner extends MessagePartnerObject {
         }));
     }
 
-    branch(data: Json = null): Effect.Effect<MessagePartnerObject, CommunicationError, EnvironmentT> {
+    branch(data: Json = null): Effect.Effect<MessagePartnerObject, CommunicationError> {
         return createMpo(this, "create_message_partner", data);
     }
     protected branch_cb: null | ((receiverClass: MessagePartnerObject, data?: Json) => void) = null;
@@ -86,8 +83,8 @@ export class MessagePartner extends MessagePartnerObject {
         this.branch_cb = callback;
     }
 
-    bridge(data: Json = null): Effect.Effect<Bridge, CommunicationError, EnvironmentT> {
-        return createMpo(this, "create_bridge", data) as Effect.Effect<Bridge, CommunicationError, EnvironmentT>;
+    bridge(data: Json = null): Effect.Effect<Bridge, CommunicationError> {
+        return createMpo(this, "create_bridge", data) as Effect.Effect<Bridge, CommunicationError>;
     }
     protected bridge_cb: null | ((receiverClass: Bridge, data?: Json) => void) = null;
     on_bridge(callback: null | ((receiverClass: Bridge, data?: Json) => void)): void {
@@ -107,6 +104,7 @@ export class MessagePartner extends MessagePartnerObject {
             }),
             decode: ({ uuid, address }, _, ast) => pipe(
                 MessagePartner.get_message_partner(uuid),
+                Effect.andThen(mpE => mpE), // Option as effect
                 Effect.flip,
                 Effect.andThen(() => Effect.gen(function* () {
                     const env = yield* EnvironmentT;
@@ -122,7 +120,7 @@ export class MessagePartner extends MessagePartnerObject {
     static makeLocalPair(env1: Environment, env2: Environment, uuid = uuidv4()): Effect.Effect<[MessagePartner, MessagePartner], MPOInitializationError> {
         return Effect.gen(this, function* () {
             for (const mp of this.message_partners) {
-                if (mp.uuid === uuid || mp.uuid === uuid + "_1" || mp.uuid === uuid + "_2") {
+                if (mp.uuid === uuid && (mp.env === env1 || mp.env === env2)) {
                     return yield* new MPOInitializationError({
                         message_partner_uuid: uuid,
                         uuid: uuid,
@@ -132,8 +130,8 @@ export class MessagePartner extends MessagePartnerObject {
             }
 
             return [
-                new MessagePartner(env2.ownAddress, env1, uuid + "_1"),
-                new MessagePartner(env1.ownAddress, env2, uuid + "_2")
+                new MessagePartner(env2.ownAddress, env1, uuid),
+                new MessagePartner(env1.ownAddress, env2, uuid)
             ] as [MessagePartner, MessagePartner];
         })
     }

@@ -32,7 +32,7 @@ export function createMpo<T extends MessagePartnerObject>(
     messagePartner: T,
     command: MPOCommand,
     data: Json = null
-): Effect.Effect<any, CommunicationError, EnvironmentT> {
+): Effect.Effect<any, CommunicationError> {
     return Effect.gen(function* () {
         const imE = yield* messagePartner._send_first_internal_message("create_mpo", { obj_cmd: command, data });
         const im = yield* imE;
@@ -54,7 +54,7 @@ export function receiveMpo(
     messagePartner: any,
     data: Json,
     im: InternalMessage
-): Effect.Effect<void, CommunicationError, EnvironmentT> {
+): Effect.Effect<void, CommunicationError> {
     return Effect.gen(function* () {
 
         const parsed = data as any;
