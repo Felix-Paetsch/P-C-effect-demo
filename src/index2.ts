@@ -1,61 +1,45 @@
-import { Effect } from "effect";
-import { createLocalEnvironment, EnvironmentT } from "../messaging/src/base/environment";
-import { LocalAddress } from "../messaging/src/base/address";
-import { chain_middleware, make_message_chain, ResponseFunctionT } from "../messaging/src/middleware/message_chains";
-import { MessageT, Message } from "../messaging/src/base/message";
-
+import { Console, Deferred, Duration, Effect, pipe } from "effect";
 
 Effect.gen(function* () {
-    const env1 = yield* createLocalEnvironment(
-        new LocalAddress("plugin2")
-    );
-    const env2 = yield* createLocalEnvironment(
-        new LocalAddress("plugin1")
-    );
+    const deferred_array: Deferred.Deferred<number, never>[] = [];
 
-    yield* env1.useMiddleware(chain_middleware(
-        // On first message just respond
-        Effect.gen(function* () {
-            const res = yield* ResponseFunctionT;
-            console.log("ON FIRST MESSAGE");
-            const resE = yield* res({
-                "test": "Respond!"
-            }, {});
-        }).pipe(
-            Effect.ignore,
-            Effect.provideService(EnvironmentT, env1)
-        ),
-        Effect.void
-    ));
-
-    yield* env2.useMiddleware(chain_middleware(
-        Effect.void,
-        Effect.gen(function* () {
-            const message = yield* MessageT;
-            console.log("MESSAGE REACHED ITS TARGET!", message);
-        })
-    ));
-
-    {
-        const msg = new Message(new LocalAddress("plugin2"), "test", {
-            "test": "Hello"
-        });
-
-        const resE = yield* make_message_chain(
-            msg
-        ).pipe(
-            Effect.provideService(EnvironmentT, env2)
+    const p1 = Effect.gen(function* () {
+        deferred_array.push(yield* Deferred.make<number, never>());
+        yield* pipe(
+            deferred_array[0],
+            Effect.tap(() => Console.log("P1 AWAITED")),
+            Effect.timeout(Duration.millis(10000))
         );
 
-        yield* env2.send.pipe(
-            Effect.provideService(MessageT, msg)
-        );
+        const d2 = deferred_array.pop()!;
+        yield* Deferred.succeed(d2, 2);
 
-        // This should give us the response
-        yield* resE;
-    }
+        deferred_array.push(yield* Deferred.make<number, never>());
+        yield* Deferred.await(deferred_array[0]);
+
+        console.log("P! DONE");
+    });
+
+    const p2 = Effect.gen(function* () {
+        const d1 = deferred_array.pop()!;
+        yield* Deferred.succeed(d1, 2);
+
+        deferred_array.push(yield* Deferred.make<number, never>());
+        yield* Deferred.await(deferred_array[0]);
+
+        const d3 = deferred_array.pop()!;
+        yield* Deferred.succeed(d3, 2);
+
+        console.log("P§ DONE")
+    });
+
+    yield* Effect.all(
+        [
+            p1,
+            p2
+        ], {
+        concurrency: "unbounded"
+    })
 }).pipe(
-    Effect.tapError(e => Effect.logError(e)),
-    Effect.ignore,
-    Effect.runSync
+    Effect.runPromise
 );

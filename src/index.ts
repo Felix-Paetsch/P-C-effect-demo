@@ -61,5 +61,6 @@ Effect.all(
     concurrency: "unbounded"
 }
 ).pipe(
-    Effect.runSync
+    // Effect.runSync
+    Effect.runPromise
 );
