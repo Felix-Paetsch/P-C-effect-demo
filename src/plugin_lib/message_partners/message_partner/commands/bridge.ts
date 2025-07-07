@@ -8,7 +8,7 @@ import { MessagePartner } from "../message_partner";
 
 declare module "../message_partner" {
     interface MessagePartner {
-        bridge(data: Json): Effect.Effect<Bridge, CommunicationError>,
+        bridge(data?: Json): Effect.Effect<Bridge, CommunicationError>,
         on_bridge(cb: (mpo: Bridge, data: Json) => void): void,
         __bridge_cb: (mpo: Bridge, data: Json) => void
     }

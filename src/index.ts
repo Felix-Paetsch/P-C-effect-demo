@@ -8,7 +8,9 @@ import { PluginEffect } from "./plugin_lib/plugin_effect";
 const env1 = createLocalEnvironment(new LocalAddress("plugin1")).pipe(Effect.runSync);
 const env2 = createLocalEnvironment(new LocalAddress("plugin2")).pipe(Effect.runSync);
 
-const [mp2, mp1] = MessagePartner.makeLocalPair(env1, env2).pipe(Effect.runSync);
+const [mp1, mp2] = MessagePartner.makeLocalPair(env1, env2).pipe(Effect.runSync);
+(mp1 as any).customProp = "I AM MP1";
+(mp2 as any).customProp = "MP2 AM I";
 
 const plugin1: PluginEffect = Effect.gen(function* () {
     const env = yield* EnvironmentT;
@@ -17,6 +19,7 @@ const plugin1: PluginEffect = Effect.gen(function* () {
     // ===============================================================
 
     mp1.on_bridge((bridge) => {
+        console.log(bridge);
         bridge.on((data) => {
             console.log(data + ", and I must scream");
         });

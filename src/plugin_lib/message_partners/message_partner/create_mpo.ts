@@ -1,4 +1,4 @@
-import { MessagePartnerObject, MPOInitializationError } from "../message_partner_object";
+import { MessagePartnerObject } from "../message_partner_object";
 import { Effect, Either } from "effect";
 import { CommunicationError, CommunicationErrorR } from "../internal_communication/protocol";
 import { Json } from "../../../../messaging/src/base/message";
@@ -8,25 +8,21 @@ import { MessagePartner } from "./message_partner";
 
 export function createMpo<T extends MessagePartnerObject>(
     messagePartner: MessagePartner,
-    senderClass: { fromExistingMessagePartnerObject: (mpo: MessagePartner, uuid: string) => Effect.Effect<T, MPOInitializationError> },
+    senderClass: { new(mpo: MessagePartner, uuid: string): T },
     command: string,
     data: Json = null
 ): Effect.Effect<T, CommunicationError> {
     return Effect.gen(function* () {
-        console.log("EEE GET TO HERE");
         const imE = yield* messagePartner._send_first_internal_message(command, data);
-        console.log("DDD GET TO HERE");
         const im = yield* imE;
-        console.log("CCC GET TO HERE");
 
         const uuid = im.data as string;
         if (!uuid || typeof uuid !== "string") return yield* new CommunicationErrorR({ message: "Expected uuid", Message: im });
 
-        const mpoE = yield* senderClass.fromExistingMessagePartnerObject(messagePartner, uuid).pipe(
+        const mpoE = yield* MessagePartnerObject.make(messagePartner, uuid, senderClass).pipe(
             Effect.either
         );
 
-        console.log("BBB GET TO HERE");
         if (Either.isLeft(mpoE)) {
             return yield* new CommunicationErrorR({
                 message: mpoE.left.message,
@@ -38,13 +34,7 @@ export function createMpo<T extends MessagePartnerObject>(
 
         const mpo = mpoE.right;
 
-        console.log("AAA GET TO HERE");
-        const _ = yield* im.respond("OK", 10000).pipe(
-            Effect.tapError(() => mpo.remove()),
-            Effect.flatMap((imE) => imE.pipe(
-                Effect.tapError(() => mpo.remove())
-            ))
-        )
+        yield* im.respond("OK", 10000);
 
         return mpo;
     })
@@ -53,17 +43,14 @@ export function createMpo<T extends MessagePartnerObject>(
 export function receiveMpo<T extends MessagePartnerObject>(
     messagePartner: MessagePartner,
     im: InternalMessage,
-    receiverClass: { fromExistingMessagePartnerObject: (mpo: MessagePartner, uuid: string) => Effect.Effect<T, MPOInitializationError> },
+    receiverClass: { new(mpo: MessagePartner, uuid: string): T },
     cb: (mpo: T) => void
 ): Effect.Effect<void, CommunicationError> {
     return Effect.gen(function* () {
         const uuid = uuidv4();
-        console.log("!!!!!!!!!!!!!1111111");
-        const okResponseE = yield* im.respond(uuid, 50000);
-        console.log("!!!!!!!!!!!!!2222222");
-        const okResponse = yield* okResponseE;
-        console.log("!!!!!!!!!!!!!3333333");
-        const mpo_object = yield* receiverClass.fromExistingMessagePartnerObject(messagePartner, uuid).pipe(
+        yield* im.respond(uuid, 50000);
+
+        const mpo_object = yield* MessagePartnerObject.make(messagePartner, uuid, receiverClass).pipe(
             Effect.either
         );
 
@@ -71,12 +58,10 @@ export function receiveMpo<T extends MessagePartnerObject>(
             return yield* new CommunicationErrorR({
                 message: mpo_object.left.message,
                 error: mpo_object.left.error,
-                Message: okResponse
+                Message: im
             });
-        } else {
-            yield* okResponse.respond("OK", 0);
         }
 
         cb(mpo_object.right);
-    });
+    })
 }

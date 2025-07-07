@@ -57,7 +57,7 @@ export class MessagePartner extends MessagePartnerObject {
         ));
     }
 
-    static make = Schema.transformOrFail(
+    static makeMP = Schema.transformOrFail(
         Schema.Struct({
             address: Schema.instanceOf(Address),
             uuid: Schema.String
@@ -84,7 +84,7 @@ export class MessagePartner extends MessagePartnerObject {
     )
 
     static fromExistingMessagePartnerObject(mpo: MessagePartnerObject, uuid: string): Effect.Effect<MessagePartner, MPOInitializationError> {
-        return Schema.decode(this.make)({
+        return Schema.decode(this.makeMP)({
             address: mpo.message_partner.address,
             uuid: uuid
         }).pipe(

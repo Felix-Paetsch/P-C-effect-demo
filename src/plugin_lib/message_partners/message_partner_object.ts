@@ -70,29 +70,37 @@ export class MessagePartnerObject {
         }));
     }
 
-    static makeMPO = Schema.transformOrFail(
-        Schema.Struct({
-            message_partner: Schema.suspend(() => Schema.instanceOf(MessagePartner)),
-            uuid: Schema.String
-        }),
-        Schema.instanceOf(this),
-        {
-            encode: (mpo: MessagePartnerObject, _, __) => Effect.succeed({
-                message_partner: mpo.message_partner,
-                uuid: mpo.uuid
-            }),
-            decode: ({ uuid, message_partner }, _, ast) => Effect.gen(function* () {
-                if (message_partner.is_removed()) {
-                    return yield* ParseResult.fail(new ParseResult.Type(ast, { uuid, message_partner }, "Message partner is no longer active"));
-                }
-                if (Option.isNone(message_partner.get_message_partner_object(uuid))) {
-                    return yield* ParseResult.fail(new ParseResult.Type(ast, { uuid, message_partner }, "Uuid already exists on message partner"));
-                }
-                const mpo = new MessagePartnerObject(message_partner, uuid);
-                return mpo;
-            })
-        }
-    )
+    static guardCanMakeMPO(mpo: MessagePartnerObject, uuid: string): Effect.Effect<void, MPOInitializationError> {
+        return Effect.gen(function* () {
+            if (mpo.is_removed()) {
+                return yield* new MPOInitializationError({
+                    message_partner_uuid: mpo.message_partner.uuid,
+                    uuid: uuid,
+                    error: new Error("Message partner is no longer active")
+                });
+            }
+            if (Option.isSome(mpo.message_partner.get_message_partner_object(uuid))) {
+                return yield* new MPOInitializationError({
+                    message_partner_uuid: mpo.message_partner.uuid,
+                    uuid: uuid,
+                    error: new Error("Uuid already exists on message partner")
+                });
+            }
+
+            return yield* Effect.void;
+        });
+    }
+
+    static make<T extends MessagePartnerObject>(
+        mpo: MessagePartnerObject,
+        uuid: string,
+        classConstructor: { new(mpo: MessagePartner, uuid: string): T }
+    ): Effect.Effect<T, MPOInitializationError> {
+        return pipe(
+            this.guardCanMakeMPO(mpo, uuid),
+            Effect.andThen(() => Effect.succeed(new classConstructor(mpo.message_partner, uuid)))
+        )
+    }
 
     static MessagePartnerObjectFromIdent = Schema.transformOrFail(
         MessagePartnerObjectIdentStruct,
@@ -112,19 +120,6 @@ export class MessagePartnerObject {
             ))
         }
     );
-
-    static fromExistingMessagePartnerObject(mpo: MessagePartnerObject, uuid: string): Effect.Effect<MessagePartnerObject, MPOInitializationError> {
-        return Schema.decode(this.makeMPO)({
-            message_partner: mpo.message_partner,
-            uuid: uuid
-        }).pipe(
-            Effect.mapError(e => new MPOInitializationError({
-                message_partner_uuid: mpo.message_partner.uuid,
-                uuid: uuid,
-                error: e
-            }))
-        );
-    }
 
     // COMMANDS
     private static _initializeClassCommands(classConstructor: Function): void {

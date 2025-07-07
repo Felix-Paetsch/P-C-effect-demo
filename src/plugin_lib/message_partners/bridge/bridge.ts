@@ -13,10 +13,6 @@ export class Bridge extends MessagePartnerObject {
     on(cb: (data: Json) => void) {
         this.__on_message_cb = cb;
     }
-
-    static fromExistingMessagePartnerObject(mpo: MessagePartnerObject, uuid: string): Effect.Effect<Bridge, MPOInitializationError> {
-        return super.fromExistingMessagePartnerObject(mpo, uuid) as Effect.Effect<Bridge, MPOInitializationError>;
-    }
 }
 
 Bridge.add_command({
