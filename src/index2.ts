@@ -5,7 +5,7 @@ import { chain_middleware, make_message_chain, ResponseFunctionT } from "../mess
 import { MessageT, Message } from "../messaging/src/base/message";
 
 
-Effect.gen(function* (_) {
+Effect.gen(function* () {
     const env1 = yield* createLocalEnvironment(
         new LocalAddress("plugin2")
     );
@@ -15,8 +15,8 @@ Effect.gen(function* (_) {
 
     yield* env1.useMiddleware(chain_middleware(
         // On first message just respond
-        Effect.gen(function* (_) {
-            const res = yield* _(ResponseFunctionT);
+        Effect.gen(function* () {
+            const res = yield* ResponseFunctionT;
             console.log("ON FIRST MESSAGE");
             const resE = yield* res({
                 "test": "Respond!"
@@ -30,8 +30,8 @@ Effect.gen(function* (_) {
 
     yield* env2.useMiddleware(chain_middleware(
         Effect.void,
-        Effect.gen(function* (_) {
-            const message = yield* _(MessageT);
+        Effect.gen(function* () {
+            const message = yield* MessageT;
             console.log("MESSAGE REACHED ITS TARGET!", message);
         })
     ));

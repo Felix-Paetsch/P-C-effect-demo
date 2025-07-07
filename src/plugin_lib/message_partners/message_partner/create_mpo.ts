@@ -38,11 +38,11 @@ export function createMpo<T extends MessagePartnerObject>(
         const im = yield* imE;
 
         const uuid = im.data as string;
-        if (!uuid) return yield* Effect.fail(new CommunicationErrorR({ message: "Expected uuid", Message: im }));
+        if (!uuid) return yield* new CommunicationErrorR({ message: "Expected uuid", Message: im });
 
         const mpoClass = getClassForCommand(command);
         if (!mpoClass) {
-            return yield* Effect.fail(new CommunicationErrorR({ message: "Unknown command", Message: im }));
+            return yield* new CommunicationErrorR({ message: "Unknown command", Message: im });
         }
 
         yield* im.respond("OK", 50000);
@@ -63,19 +63,19 @@ export function receiveMpo(
         // Loop over configs to find matching command and callback
         const config = MPO_CONFIGS.find(c => c.command === obj_cmd);
         if (!config) {
-            return yield* Effect.fail(new CommunicationErrorR({
+            return yield* new CommunicationErrorR({
                 message: "Unknown creation command",
                 Message: im
-            }));
+            });
         }
 
         const callbackName = `${config.create_method_name}_cb`;
         const cb = messagePartner[callbackName];
         if (!cb) {
-            return yield* Effect.fail(new CommunicationErrorR({
+            return yield* new CommunicationErrorR({
                 message: "No callback found",
                 Message: im
-            }));
+            });
         }
 
         const uuid = uuidv4();

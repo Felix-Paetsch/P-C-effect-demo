@@ -8,27 +8,26 @@ import { PluginEffect } from "./plugin_lib/plugin_effect";
 const mp1 = new MessagePartner(new LocalAddress("plugin2"), "test");
 const mp2 = new MessagePartner(new LocalAddress("plugin1"), "test"); //, mp1.uuid);
 
-const plugin1: PluginEffect = Effect.gen(function* (_) {
-    const env = yield* _(EnvironmentT);
+const plugin1: PluginEffect = Effect.gen(function* () {
+    const env = yield* EnvironmentT;
     yield* env.useMiddleware(yield* InternalCommunication.middleware(env));
 
     // ===============================================================
 
     mp1.on_bridge((bridge) => {
-        console.log("ON BRIDGE");
         bridge.on((data) => {
             console.log(data + ", and I must scream");
         });
     })
 }).pipe(Effect.tapError(e => Effect.logError(e)));
 
-const plugin2: PluginEffect = Effect.gen(function* (_) {
-    const env = yield* _(EnvironmentT);
+const plugin2: PluginEffect = Effect.gen(function* () {
+    const env = yield* EnvironmentT;
     yield* env.useMiddleware(yield* InternalCommunication.middleware(env));
 
     // ===============================================================
-    const a = yield* mp2.bridge();
-    yield* a.send("I have no mouth");
+    const bridge = yield* mp2.bridge();
+    yield* bridge.send("I have no mouth");
 }).pipe(Effect.tapError(e => Effect.logError(e)));
 
 

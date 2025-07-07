@@ -18,16 +18,15 @@ export class InternalMessage {
         CommunicationError,
         never
     > {
-        const self = this;
         return this.pm.respond(Schema.encodeSync(InternalMessageProtocolDataSchema)({
-            mpo_ident: self.mpo.ident,
-            internal_message_protocol_name: self.protocol,
+            mpo_ident: this.mpo.ident,
+            internal_message_protocol_name: this.protocol,
             protocol_data: data
         }), timeout).pipe(
             Effect.andThen(pme => Effect.succeed(InternalMessage.FromProtocolMessageEffect(
-                pme, self.mpo, self.protocol
+                pme, this.mpo, this.protocol
             ))),
-            Effect.mapError(e => to_internal_message_protocol_error(e, self))
+            Effect.mapError(e => to_internal_message_protocol_error(e, this))
         )
     }
 
@@ -40,7 +39,7 @@ export class InternalMessage {
         return pme.pipe(
             Effect.andThen(pm => pipe(
                 guard_mpo_still_active(mpo),
-                Effect.andThen(_ => Effect.gen(function* (_) {
+                Effect.andThen(_ => Effect.gen(function* () {
                     const data = yield* getInternalMessageProtocolData;
                     return new InternalMessage(
                         pm, mpo, data.protocol_data, protocol

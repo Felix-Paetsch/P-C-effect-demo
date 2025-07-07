@@ -12,12 +12,12 @@ export const MessagePartnerGotRemovedMessage = "Message partner object was remov
 export function get_message_partner(msg_partner_ident: string): Effect.Effect<MessagePartner, ProtocolError, ProtocolMessageT> {
     return pipe(
         MessagePartner.get_message_partner(msg_partner_ident),
-        Effect.catchAll(e => Effect.gen(function* (_) {
-            return yield* Effect.fail(new ProtocolErrorR({
+        Effect.catchAll(e => Effect.gen(function* () {
+            return yield* new ProtocolErrorR({
                 message: MessagePartnerNotFoundMessage,
                 error: e,
-                Message: yield* _(ProtocolMessageT)
-            }))
+                Message: yield* ProtocolMessageT
+            })
         })),
         Protocol.fail_with_response
     )
@@ -26,25 +26,25 @@ export function get_message_partner(msg_partner_ident: string): Effect.Effect<Me
 export function get_message_partner_object(msg_partner_ident: MessagePartnerObjectIdent): Effect.Effect<MessagePartnerObject, ProtocolError, ProtocolMessageT> {
     return pipe(
         Schema.decodeUnknown(MessagePartnerObject.MessagePartnerObjectFromIdent)(msg_partner_ident),
-        Effect.catchAll(e => Effect.gen(function* (_) {
-            return yield* Effect.fail(new ProtocolErrorR({
+        Effect.catchAll(e => Effect.gen(function* () {
+            return yield* new ProtocolErrorR({
                 message: MessagePartnerObjectNotFoundMessage,
                 error: e,
-                Message: yield* _(ProtocolMessageT)
-            }))
+                Message: yield* ProtocolMessageT
+            })
         })),
     )
 }
 
 export function guard_mpo_still_active(mpo: MessagePartnerObject): Effect.Effect<MessagePartnerObject, ProtocolErrorR, ProtocolMessageT> {
-    return Effect.gen(function* (_) {
+    return Effect.gen(function* () {
         if (mpo.is_removed()) {
             const err = new ProtocolErrorR({
                 message: MessagePartnerGotRemovedMessage,
                 error: new Error(MessagePartnerGotRemovedMessage),
-                Message: yield* _(ProtocolMessageT)
+                Message: yield* ProtocolMessageT
             });
-            return yield* Effect.fail(err);
+            return yield* err;
         }
 
         return mpo;

@@ -15,16 +15,16 @@ export const InternalMessageProtocolDataSchema = Schema.Struct({
     protocol_data: Schema.Any
 });
 
-export const getInternalMessageProtocolData = Effect.gen(function* (_) {
-    const msg = yield* _(ProtocolMessageT);
+export const getInternalMessageProtocolData = Effect.gen(function* () {
+    const msg = yield* ProtocolMessageT;
     return yield* Schema.decodeUnknown(InternalMessageProtocolDataSchema)(msg.data);
 }).pipe(
-    Effect.catchAll(e => Effect.gen(function* (_) {
-        return yield* Effect.fail(new CommunicationErrorR({
+    Effect.catchAll(e => Effect.gen(function* () {
+        return yield* new CommunicationErrorR({
             message: "Invalid request",
             error: e,
-            Message: yield* _(ProtocolMessageT)
-        }))
+            Message: yield* ProtocolMessageT
+        })
     }))
 )
 
@@ -95,9 +95,8 @@ export class InternalCommunicationProtocol extends Protocol<InternalMessageResul
         data?: Json,
         timeout?: number
     ): Effect.Effect<InternalMessageResult, CommunicationErrorN, EnvironmentT> {
-        const self = this;
-        return Effect.gen(function* (_) {
-            const pme = yield* self.send_first_message(
+        return Effect.gen(this, function* () {
+            const pme = yield* this.send_first_message(
                 mpo.message_partner.address,
                 Schema.encodeSync(InternalMessageProtocolDataSchema)({
                     mpo_ident: mpo.ident,
@@ -113,9 +112,8 @@ export class InternalCommunicationProtocol extends Protocol<InternalMessageResul
     }
 
     get on_first_request(): Effect.Effect<void, ProtocolError, ProtocolMessageT | EnvironmentT> {
-        const self = this;
-        return Effect.gen(function* (_) {
-            const msg = yield* _(ProtocolMessageT);
+        return Effect.gen(this, function* () {
+            const msg = yield* ProtocolMessageT;
             const data = yield* getInternalMessageProtocolData;
             const mpo = yield* get_message_partner_object(data.mpo_ident);
             const im = new InternalMessage(
