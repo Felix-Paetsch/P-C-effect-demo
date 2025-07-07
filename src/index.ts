@@ -19,7 +19,7 @@ const plugin1: PluginEffect = Effect.gen(function* () {
     // ===============================================================
 
     mp1.on_bridge((bridge) => {
-        console.log(bridge);
+        console.log("HERE IS MY BRIDGE");
         bridge.on((data) => {
             console.log(data + ", and I must scream");
         });
