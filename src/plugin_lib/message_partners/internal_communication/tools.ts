@@ -13,11 +13,7 @@ export const MessagePartnerGotRemovedMessage = "Message partner object was remov
 export function get_message_partner(msg_partner_ident: string): Effect.Effect<MessagePartner, ProtocolError, ProtocolMessageT> {
     return pipe(
         MessagePartner.get_message_partner(msg_partner_ident),
-        Effect.provideServiceEffect(EnvironmentT, pipe(
-            ProtocolMessageT,
-            Effect.andThen(pm => pm.environment)
-        )),
-        Effect.andThen(mpo => mpo),
+        Effect.andThen(mp => mp),
         Effect.catchAll(e => Effect.gen(function* () {
             return yield* new ProtocolErrorR({
                 message: MessagePartnerNotFoundMessage,
@@ -25,6 +21,10 @@ export function get_message_partner(msg_partner_ident: string): Effect.Effect<Me
                 Message: yield* ProtocolMessageT
             })
         })),
+        Effect.provideServiceEffect(EnvironmentT, pipe(
+            ProtocolMessageT,
+            Effect.andThen(pm => pm.environment)
+        )),
         Protocol.fail_with_response
     )
 }
@@ -32,10 +32,6 @@ export function get_message_partner(msg_partner_ident: string): Effect.Effect<Me
 export function get_message_partner_object(msg_partner_ident: MessagePartnerObjectIdent): Effect.Effect<MessagePartnerObject, ProtocolError, ProtocolMessageT> {
     return pipe(
         Schema.decodeUnknown(MessagePartnerObject.MessagePartnerObjectFromIdent)(msg_partner_ident),
-        Effect.provideServiceEffect(EnvironmentT, pipe(
-            ProtocolMessageT,
-            Effect.andThen(pm => pm.environment)
-        )),
         Effect.catchAll(e => Effect.gen(function* () {
             return yield* new ProtocolErrorR({
                 message: MessagePartnerObjectNotFoundMessage,
@@ -43,6 +39,10 @@ export function get_message_partner_object(msg_partner_ident: MessagePartnerObje
                 Message: yield* ProtocolMessageT
             })
         })),
+        Effect.provideServiceEffect(EnvironmentT, pipe(
+            ProtocolMessageT,
+            Effect.andThen(pm => pm.environment)
+        ))
     )
 }
 

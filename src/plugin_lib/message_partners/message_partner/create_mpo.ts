@@ -14,7 +14,7 @@ export function createMpo<T extends MessagePartnerObject>(
 ): Effect.Effect<T, CommunicationError> {
     return Effect.gen(function* () {
         console.log("A");
-        const im = yield* messagePartner._send_first_internal_message(command, data, 100000);
+        const im = yield* yield* messagePartner._send_first_internal_message(command, data, 100000);
         console.log("B");
 
         const uuid = im.data as string;
@@ -36,7 +36,7 @@ export function createMpo<T extends MessagePartnerObject>(
         const mpo = mpoE.right;
 
         console.log("D");
-        const imE2 = yield* im.requestRespond("OK", 100000);
+        const imE2 = yield* yield* im.respond("OK", 100000);
         console.log("E");
         // yield* imE2.respond("Ok", 10000);
         console.log("F");
@@ -54,7 +54,7 @@ export function receiveMpo<T extends MessagePartnerObject>(
     return Effect.gen(function* () {
         const uuid = uuidv4();
         console.log("R");
-        const im2 = yield* im.requestRespond(uuid, 100000);
+        const im2 = yield* yield* im.respond(uuid, 100000);
         console.log("S");
 
         //yield* responseE.pipe(promisify);

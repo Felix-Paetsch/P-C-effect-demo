@@ -5,8 +5,7 @@ import { CommunicationError } from "../../internal_communication/protocol";
 import { SignalSender } from "../../signal/sender";
 import { InternalMessage } from "../../internal_communication/internal_message";
 import { Json } from "../../../../../messaging/src/base/message";
-import { Bridge } from "../../bridge/bridge";
-import { SignalReciever } from "../../signal/reciver";
+import { SignalReciever } from "../../signal/reciever";
 
 declare module "../message_partner" {
     interface MessagePartner {

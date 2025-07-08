@@ -1,11 +1,10 @@
 import { Context, Effect, ParseResult, pipe, Schema, Option, Data } from "effect";
 import { MessagePartner } from "./message_partner/message_partner";
-import { CommunicationError, CommunicationErrorR, InternalCommunication } from "./internal_communication/protocol";
+import { CommunicationError, CommunicationErrorR, InternalCommunication, InternalMessageResult } from "./internal_communication/protocol";
 import { EnvironmentT } from "../../../messaging/src/base/environment";
 import { InternalMessage } from "./internal_communication/internal_message";
 import { Json } from "../../../messaging/src/base/message";
 import applyRemovePrototypeModifier from "./mpo_commands.ts/remove";
-import { instanceOf } from "effect/Schema";
 
 export class MPOInitializationError extends Data.TaggedError("MPOInitializationError")<{
     message_partner_uuid: string;
@@ -49,7 +48,7 @@ export class MessagePartnerObject {
     }
 
     _send_first_internal_message(protocol: string, data?: Json, timeout?: number): Effect.Effect<
-        InternalMessage,
+        InternalMessageResult,
         CommunicationError
     > {
         return InternalCommunication.run_mpo(this, protocol, data, timeout).pipe(
