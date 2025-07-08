@@ -1,11 +1,14 @@
 TODO:
 
-Respond to messages:
-To Promises (and make sure these are pushed in the correct order to the task queue)
+-   Fix internal messages request/responding
+-   Fix CREATE_MPO
+-   Abstraction layer, so you don't always get a new message you have to respond to + you can transfer over control
 
 Notes: It actually still is a structural problem and fails even the first time..
 Main Problem: You always have to yield the correct one, or the timeout causes a deadlock.. you could repeatedly check that it is ok now...
 We have to start listening before sending (?!)
+
+If we respond to a message w/o awaiting a request, it should be in the headers
 
 -   CleanUp eventlisteners => Get rid of some state <3
 -   Aquire/use/release?

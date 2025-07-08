@@ -14,10 +14,9 @@ export function createMpo<T extends MessagePartnerObject>(
 ): Effect.Effect<T, CommunicationError> {
     return Effect.gen(function* () {
         console.log("A");
-        const imE = yield* messagePartner._send_first_internal_message(command, data);
+        const im = yield* messagePartner._send_first_internal_message(command, data);
         console.log("B");
-        const im = yield* imE;
-        console.log("C");
+
         const uuid = im.data as string;
         if (!uuid || typeof uuid !== "string") return yield* new CommunicationErrorR({ message: "Expected uuid", Message: im });
 
@@ -37,7 +36,7 @@ export function createMpo<T extends MessagePartnerObject>(
         const mpo = mpoE.right;
 
         console.log("D");
-        const imE2 = yield* im.respond("OK", 1000000);
+        const imE2 = yield* im.requestRespond("OK", 1000000);
         console.log("E");
         // yield* imE2.respond("Ok", 10000);
         console.log("F");
@@ -55,12 +54,12 @@ export function receiveMpo<T extends MessagePartnerObject>(
     return Effect.gen(function* () {
         const uuid = uuidv4();
         console.log("R");
-        const responseE = yield* im.respond(uuid, 1000000);
-        yield* responseE;
+        const im2 = yield* im.requestRespond(uuid, 1000000);
+        console.log("S");
+
         //yield* responseE.pipe(promisify);
         //Promise.resolve().then(() => {
         //    return Effect.gen(function* () {
-        console.log("S");
 
         const mpo_object = yield* MessagePartnerObject.make(messagePartner, uuid, receiverClass).pipe(
             Effect.either

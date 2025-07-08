@@ -82,9 +82,7 @@ export function to_internal_message_protocol_error(e: Error, msg?: InternalMessa
     })
 }
 
-type InternalMessageResult = Effect.Effect<InternalMessage, CommunicationError>;
-
-export class InternalCommunicationProtocol extends Protocol<InternalMessageResult, InternalMessage> {
+export class InternalCommunicationProtocol extends Protocol<InternalMessage, InternalMessage> {
     constructor() {
         super("message_partner_object_communication", "main", "1.0.0");
     }
@@ -94,9 +92,9 @@ export class InternalCommunicationProtocol extends Protocol<InternalMessageResul
         internal_message_protocol_name: string,
         data?: Json,
         timeout?: number
-    ): Effect.Effect<InternalMessageResult, CommunicationErrorN, EnvironmentT> {
+    ): Effect.Effect<InternalMessage, CommunicationErrorN, EnvironmentT> {
         return Effect.gen(this, function* () {
-            const pme = yield* this.send_first_message(
+            const pm = yield* this.send_first_message(
                 mpo.message_partner.address,
                 Schema.encodeSync(InternalMessageProtocolDataSchema)({
                     mpo_ident: mpo.ident,
@@ -105,7 +103,7 @@ export class InternalCommunicationProtocol extends Protocol<InternalMessageResul
                 }), timeout
             )
 
-            return InternalMessage.FromProtocolMessageEffect(pme, mpo, internal_message_protocol_name)
+            return yield* InternalMessage.FromProtocolMessage(pm, mpo, internal_message_protocol_name)
         }).pipe(
             Effect.mapError(e => to_internal_message_protocol_error(e))
         )

@@ -13,8 +13,25 @@ export class InternalMessage {
         readonly protocol: string
     ) { }
 
-    respond(data: Json = null, timeout?: number): Effect.Effect<
-        Effect.Effect<InternalMessage, CommunicationError, never>,
+    requestRespond(data: Json = null, timeout?: number): Effect.Effect<
+        InternalMessage,
+        CommunicationError,
+        never
+    > {
+        return this.pm.requestRespond(Schema.encodeSync(InternalMessageProtocolDataSchema)({
+            mpo_ident: this.mpo.ident,
+            internal_message_protocol_name: this.protocol,
+            protocol_data: data
+        }), timeout).pipe(
+            Effect.andThen(pm => InternalMessage.FromProtocolMessage(
+                pm, this.mpo, this.protocol
+            )),
+            Effect.mapError(e => to_internal_message_protocol_error(e, this))
+        )
+    }
+
+    respond(data: Json = null): Effect.Effect<
+        void,
         CommunicationError,
         never
     > {
@@ -22,31 +39,26 @@ export class InternalMessage {
             mpo_ident: this.mpo.ident,
             internal_message_protocol_name: this.protocol,
             protocol_data: data
-        }), timeout).pipe(
-            Effect.andThen(pme => Effect.succeed(InternalMessage.FromProtocolMessageEffect(
-                pme, this.mpo, this.protocol
-            ))),
+        })).pipe(
             Effect.mapError(e => to_internal_message_protocol_error(e, this))
         )
     }
 
     // When processing a mpo message it is guaranteed that the mpo is still active
-    static FromProtocolMessageEffect(
-        pme: Effect.Effect<ProtocolMessage, ProtocolError>,
+    static FromProtocolMessage(
+        pm: ProtocolMessage,
         mpo: MessagePartnerObject,
         protocol: string
     ): Effect.Effect<InternalMessage, ProtocolError> {
-        return pme.pipe(
-            Effect.andThen(pm => pipe(
-                guard_mpo_still_active(mpo),
-                Effect.andThen(_ => Effect.gen(function* () {
-                    const data = yield* getInternalMessageProtocolData;
-                    return new InternalMessage(
-                        pm, mpo, data.protocol_data, protocol
-                    );
-                })),
-                Effect.provideService(ProtocolMessageT, pm)
-            ))
+        return pipe(
+            guard_mpo_still_active(mpo),
+            Effect.andThen(_ => Effect.gen(function* () {
+                const data = yield* getInternalMessageProtocolData;
+                return new InternalMessage(
+                    pm, mpo, data.protocol_data, protocol
+                );
+            })),
+            Effect.provideService(ProtocolMessageT, pm)
         )
     }
 }

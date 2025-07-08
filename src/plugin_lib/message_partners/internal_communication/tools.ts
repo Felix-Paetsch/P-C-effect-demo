@@ -4,6 +4,7 @@ import { MessagePartner } from "../message_partner/message_partner";
 import { MessagePartnerObject, MessagePartnerObjectIdent } from "../message_partner_object";
 import { Protocol } from "../../../../messaging/src/protocols/protocol";
 import { ProtocolError } from "../../../../messaging/src/protocols/protocol";
+import { EnvironmentT } from "../../../../messaging/src/base/environment";
 
 export const MessagePartnerNotFoundMessage = "Message partner not found" as const;
 export const MessagePartnerObjectNotFoundMessage = "Message partner object not found" as const;
@@ -12,6 +13,11 @@ export const MessagePartnerGotRemovedMessage = "Message partner object was remov
 export function get_message_partner(msg_partner_ident: string): Effect.Effect<MessagePartner, ProtocolError, ProtocolMessageT> {
     return pipe(
         MessagePartner.get_message_partner(msg_partner_ident),
+        Effect.provideServiceEffect(EnvironmentT, pipe(
+            ProtocolMessageT,
+            Effect.andThen(pm => pm.environment)
+        )),
+        Effect.andThen(mpo => mpo),
         Effect.catchAll(e => Effect.gen(function* () {
             return yield* new ProtocolErrorR({
                 message: MessagePartnerNotFoundMessage,
@@ -26,6 +32,10 @@ export function get_message_partner(msg_partner_ident: string): Effect.Effect<Me
 export function get_message_partner_object(msg_partner_ident: MessagePartnerObjectIdent): Effect.Effect<MessagePartnerObject, ProtocolError, ProtocolMessageT> {
     return pipe(
         Schema.decodeUnknown(MessagePartnerObject.MessagePartnerObjectFromIdent)(msg_partner_ident),
+        Effect.provideServiceEffect(EnvironmentT, pipe(
+            ProtocolMessageT,
+            Effect.andThen(pm => pm.environment)
+        )),
         Effect.catchAll(e => Effect.gen(function* () {
             return yield* new ProtocolErrorR({
                 message: MessagePartnerObjectNotFoundMessage,

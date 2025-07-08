@@ -49,7 +49,7 @@ export class MessagePartnerObject {
     }
 
     _send_first_internal_message(protocol: string, data?: Json, timeout?: number): Effect.Effect<
-        Effect.Effect<InternalMessage, CommunicationError>,
+        InternalMessage,
         CommunicationError
     > {
         return InternalCommunication.run_mpo(this, protocol, data, timeout).pipe(
