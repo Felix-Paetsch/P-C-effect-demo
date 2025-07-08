@@ -4,6 +4,7 @@ import { LocalAddress } from "../messaging/src/base/address";
 import { InternalCommunication } from "./plugin_lib/message_partners/internal_communication/protocol";
 import { MessagePartner } from "./plugin_lib/message_partners/message_partner/message_partner";
 import { PluginEffect } from "./plugin_lib/plugin_effect";
+import { dangerouslyRunPromise } from "../messaging/src/utils/run";
 
 const env1 = createLocalEnvironment(new LocalAddress("plugin1")).pipe(Effect.runSync);
 const env2 = createLocalEnvironment(new LocalAddress("plugin2")).pipe(Effect.runSync);
@@ -23,6 +24,9 @@ const plugin1: PluginEffect = Effect.gen(function* () {
         bridge.on((data) => {
             console.log(data + ", and I must scream");
         });
+        bridge.on_listener_registered((bridge) => {
+            dangerouslyRunPromise(bridge.send("Here I am").pipe(Effect.orDie));
+        });
     })
 }).pipe(Effect.tapError(e => Effect.logError(e)));
 
@@ -33,6 +37,9 @@ const plugin2: PluginEffect = Effect.gen(function* () {
     // ===============================================================
     const bridge = yield* mp2.bridge();
     yield* bridge.send("I have no mouth");
+    bridge.on((data) => {
+        console.log(data + ", and I must still scream");
+    });
 }).pipe(Effect.tapError(e => Effect.logError(e)));
 
 
