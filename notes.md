@@ -1,7 +1,6 @@
 TODO:
 
--   Fix internal messages request/responding
--   Fix CREATE_MPO
+-   Correct error handling
 -   Abstraction layer, so you don't always get a new message you have to respond to + you can transfer over control
 
 Notes: It actually still is a structural problem and fails even the first time..

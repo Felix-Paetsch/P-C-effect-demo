@@ -3,8 +3,9 @@ import { MessagePartner } from "./message_partner/message_partner";
 import { CommunicationError, CommunicationErrorR, InternalCommunication, InternalMessageResult } from "./internal_communication/protocol";
 import { EnvironmentT } from "../../../messaging/src/base/environment";
 import { InternalMessage } from "./internal_communication/internal_message";
-import { Json } from "../../../messaging/src/base/message";
+import { Json } from "../../../messaging/src/utils/json";
 import applyRemovePrototypeModifier from "./mpo_commands.ts/remove";
+import { InternalCommunicationHandler } from "./internal_communication/internalCommunicationHandler";
 
 export class MPOInitializationError extends Data.TaggedError("MPOInitializationError")<{
     message_partner_uuid: string;
@@ -23,7 +24,7 @@ export class MessagePartnerObject {
     private static classCommands = new Map<Function, {
         [key: string]: {
             command: string;
-            on_first_request: (mpo: any, im: InternalMessage, data: Json) => Effect.Effect<void, CommunicationError>;
+            on_first_request: (mpo: any, im: InternalCommunicationHandler, data: Json) => Effect.Effect<void, CommunicationError>;
         }
     }>();
 
@@ -47,8 +48,15 @@ export class MessagePartnerObject {
         return this.removed || this.message_partner.is_removed();
     }
 
+    _send_command(command: string, data?: Json, timeout?: number): Effect.Effect<
+        Effect.Effect<InternalCommunicationHandler, CommunicationError>,
+        CommunicationError
+    > {
+        return this._send_first_internal_message(command, data, timeout)
+    }
+
     _send_first_internal_message(protocol: string, data?: Json, timeout?: number): Effect.Effect<
-        InternalMessageResult,
+        Effect.Effect<InternalCommunicationHandler, CommunicationError>,
         CommunicationError
     > {
         return InternalCommunication.run_mpo(this, protocol, data, timeout).pipe(
@@ -59,7 +67,7 @@ export class MessagePartnerObject {
     _recieve_internal_message(protocol_name: string, data: Json, im: InternalMessage): Effect.Effect<void, CommunicationError> {
         const command = (this.constructor as typeof MessagePartnerObject).get_command(protocol_name);
         if (command) {
-            return command.on_first_request(this, im, data);
+            return command.on_first_request(this, new InternalCommunicationHandler(im), data);
         }
 
         return Effect.fail(new CommunicationErrorR({
@@ -129,7 +137,7 @@ export class MessagePartnerObject {
 
     static add_command<T extends MessagePartnerObject = MessagePartnerObject>(command: {
         command: string;
-        on_first_request: (mpo: T, im: InternalMessage, data: Json) => Effect.Effect<void, CommunicationError>;
+        on_first_request: (mpo: T, im: InternalCommunicationHandler, data: Json) => Effect.Effect<void, CommunicationError>;
     }): void {
         MessagePartnerObject._initializeClassCommands(this);
         const classCommandMap = MessagePartnerObject.classCommands.get(this)!;
@@ -138,7 +146,7 @@ export class MessagePartnerObject {
 
     static get_command(commandName: string): {
         command: string;
-        on_first_request: (mpo: any, im: InternalMessage, data: Json) => Effect.Effect<void, CommunicationError>;
+        on_first_request: (mpo: any, im: InternalCommunicationHandler, data: Json) => Effect.Effect<void, CommunicationError>;
     } | undefined {
         let currentClass: Function = this;
         while (currentClass && currentClass !== Function.prototype) {

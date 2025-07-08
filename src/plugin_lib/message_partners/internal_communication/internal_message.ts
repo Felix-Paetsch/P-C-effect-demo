@@ -1,5 +1,5 @@
 import { Context, Effect, pipe, Schema } from "effect";
-import { Json } from "../../../../messaging/src/base/message";
+import { Json } from "../../../../messaging/src/utils/json";
 import { ProtocolError, ProtocolMessage, ProtocolMessageT } from "../../../../messaging/src/protocols/protocol";
 import { MessagePartnerObject } from "../message_partner_object";
 import { guard_mpo_still_active } from "./tools";

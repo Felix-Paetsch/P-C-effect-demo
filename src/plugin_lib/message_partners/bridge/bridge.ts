@@ -1,5 +1,5 @@
 import { MessagePartnerObject, MPOInitializationError } from "../message_partner_object";
-import { Json } from "../../../../messaging/src/base/message";
+import { Json } from "../../../../messaging/src/utils/json";
 import { Effect } from "effect";
 import { InternalMessage } from "../internal_communication/internal_message";
 import { CommunicationError } from "../internal_communication/protocol";

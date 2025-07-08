@@ -1,10 +1,11 @@
 import { Effect, Schema } from "effect";
 import { ProtocolErrorN, ProtocolErrorR, ProtocolMessage, ProtocolError, ProtocolMessageT, Protocol } from "../../../../messaging/src/protocols/protocol";
 import { MessagePartnerObject } from "../message_partner_object";
-import { Json } from "../../../../messaging/src/base/message";
+import { Json } from "../../../../messaging/src/utils/json";
 import { EnvironmentT } from "../../../../messaging/src/base/environment";
 import { get_message_partner_object } from "./tools";
 import { InternalMessage } from "./internal_message";
+import { InternalCommunicationHandler } from "./internalCommunicationHandler";
 
 export const InternalMessageProtocolDataSchema = Schema.Struct({
     mpo_ident: Schema.Struct({
@@ -84,7 +85,7 @@ export function to_internal_message_protocol_error(e: Error, msg?: InternalMessa
 
 export type InternalMessageResult = Effect.Effect<InternalMessage, CommunicationError>;
 
-export class InternalCommunicationProtocol extends Protocol<InternalMessageResult, InternalMessage> {
+export class InternalCommunicationProtocol extends Protocol<Effect.Effect<InternalCommunicationHandler, CommunicationErrorN>, InternalCommunicationHandler> {
     constructor() {
         super("message_partner_object_communication", "main", "1.0.0");
     }
@@ -94,7 +95,11 @@ export class InternalCommunicationProtocol extends Protocol<InternalMessageResul
         internal_message_protocol_name: string,
         data?: Json,
         timeout?: number
-    ): Effect.Effect<InternalMessageResult, CommunicationErrorN, EnvironmentT> {
+    ): Effect.Effect<
+        Effect.Effect<InternalCommunicationHandler, CommunicationErrorN>,
+        CommunicationErrorN,
+        EnvironmentT
+    > {
         return Effect.gen(this, function* () {
             const pme = yield* this.send_first_message(
                 mpo.message_partner.address,
@@ -105,7 +110,9 @@ export class InternalCommunicationProtocol extends Protocol<InternalMessageResul
                 }), timeout
             )
 
-            return InternalMessage.FromProtocolMessageEffect(pme, mpo, internal_message_protocol_name)
+            return InternalMessage.FromProtocolMessageEffect(pme, mpo, internal_message_protocol_name).pipe(
+                Effect.andThen(im => new InternalCommunicationHandler(im))
+            )
         }).pipe(
             Effect.mapError(e => to_internal_message_protocol_error(e))
         )

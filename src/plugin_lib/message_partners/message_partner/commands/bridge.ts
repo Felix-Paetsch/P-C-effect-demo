@@ -2,9 +2,10 @@ import { Effect } from "effect";
 import { Bridge } from "../../bridge/bridge";
 import { CommunicationError } from "../../internal_communication/protocol";
 import { createMpo, receiveMpo } from "../create_mpo";
-import { Json } from "../../../../../messaging/src/base/message";
+import { Json } from "../../../../../messaging/src/utils/json";
 import { InternalMessage } from "../../internal_communication/internal_message";
 import { MessagePartner } from "../message_partner";
+import { InternalCommunicationHandler } from "../../internal_communication/internalCommunicationHandler";
 
 declare module "../message_partner" {
     interface MessagePartner {
@@ -35,7 +36,7 @@ export default function (MPC: typeof MessagePartner) {
 
     MPC.add_command({
         command: cmd,
-        on_first_request: (mp: MessagePartner, im: InternalMessage, data: Json) => {
+        on_first_request: (mp: MessagePartner, im: InternalCommunicationHandler, data: Json) => {
             return receiveMpo<Bridge>(mp, im, Bridge, (mpo) => {
                 mp.__bridge_cb(mpo, data);
             })

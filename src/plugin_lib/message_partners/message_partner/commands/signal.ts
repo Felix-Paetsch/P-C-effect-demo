@@ -3,9 +3,9 @@ import { Effect } from "effect";
 import { createMpo, receiveMpo } from "../create_mpo";
 import { CommunicationError } from "../../internal_communication/protocol";
 import { SignalSender } from "../../signal/sender";
-import { InternalMessage } from "../../internal_communication/internal_message";
-import { Json } from "../../../../../messaging/src/base/message";
+import { Json } from "../../../../../messaging/src/utils/json";
 import { SignalReciever } from "../../signal/reciever";
+import { InternalCommunicationHandler } from "../../internal_communication/internalCommunicationHandler";
 
 declare module "../message_partner" {
     interface MessagePartner {
@@ -36,7 +36,7 @@ export default function (MPC: typeof MessagePartner) {
 
     MPC.add_command({
         command: cmd,
-        on_first_request: (mp: MessagePartner, im: InternalMessage, data: Json) => {
+        on_first_request: (mp: MessagePartner, im: InternalCommunicationHandler, data: Json) => {
             return receiveMpo<SignalReciever>(mp, im, SignalReciever, (mpo) => {
                 mp.__signal_cb(mpo, data);
             })
