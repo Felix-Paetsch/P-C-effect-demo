@@ -1,45 +1,53 @@
-import { Console, Deferred, Duration, Effect, pipe } from "effect";
+import { Effect } from "effect";
+import { createLocalEnvironment, EnvironmentT } from "../messaging/src/base/environment";
+import { LocalAddress } from "../messaging/src/base/address";
+import { Message, MessageT } from "../messaging/src/base/message";
+import { chain_middleware, ChainMessageResultT, make_message_chain } from "../messaging/src/middleware/message_chains";
+import { PluginEffect } from "./plugin_lib/plugin_effect";
 
-Effect.gen(function* () {
-    const deferred_array: Deferred.Deferred<number, never>[] = [];
+const env1 = createLocalEnvironment(new LocalAddress("plugin1")).pipe(Effect.runSync);
+const env2 = createLocalEnvironment(new LocalAddress("plugin2")).pipe(Effect.runSync);
 
-    const p1 = Effect.gen(function* () {
-        deferred_array.push(yield* Deferred.make<number, never>());
-        yield* pipe(
-            deferred_array[0],
-            Effect.tap(() => Console.log("P1 AWAITED")),
-            Effect.timeout(Duration.millis(10000))
-        );
+const plugin1: PluginEffect = Effect.gen(function* () {
+    const env = yield* EnvironmentT;
+    yield* env.useMiddleware(chain_middleware(
+        Effect.gen(function* () {
+            console.log("1");
+            const res = yield* ChainMessageResultT;
+            yield* res.requestRespond({ response: "Hello from plugin1!" }, {}, 100000000);
+            console.log("2");
+        }).pipe(Effect.provideService(EnvironmentT, env), Effect.orDie),
+        Effect.void
+    ));
+    console.log("PLUGIN1: Listening");
+    yield* Effect.never;
+}).pipe(Effect.tapError(e => Effect.logError(e)));
 
-        const d2 = deferred_array.pop()!;
-        yield* Deferred.succeed(d2, 2);
+const plugin2: PluginEffect = Effect.gen(function* () {
+    const env = yield* EnvironmentT;
+    yield* env.useMiddleware(chain_middleware());
 
-        deferred_array.push(yield* Deferred.make<number, never>());
-        yield* Deferred.await(deferred_array[0]);
+    const initialMessage = new Message(
+        env1.ownAddress,
+        { greeting: "Hello from plugin2!" }
+    );
 
-        console.log("P! DONE");
-    });
+    const send = env.send.pipe(Effect.provideService(MessageT, initialMessage));
+    const MMC = yield* make_message_chain(initialMessage, 100000000);
+    console.log("A");
 
-    const p2 = Effect.gen(function* () {
-        const d1 = deferred_array.pop()!;
-        yield* Deferred.succeed(d1, 2);
+    const sendFiber = yield* Effect.fork(send);
+    const mmc_res = yield* MMC;
+    console.log("B");
 
-        deferred_array.push(yield* Deferred.make<number, never>());
-        yield* Deferred.await(deferred_array[0]);
+    yield* mmc_res.respond({ response: "Hello from plugin2!" });
+}).pipe(Effect.tapError(e => Effect.logError(e)));
 
-        const d3 = deferred_array.pop()!;
-        yield* Deferred.succeed(d3, 2);
+const program1 = plugin1.pipe(Effect.provideService(EnvironmentT, env1));
+const program2 = plugin2.pipe(Effect.provideService(EnvironmentT, env2));
 
-        console.log("P§ DONE")
-    });
-
-    yield* Effect.all(
-        [
-            p1,
-            p2
-        ], {
-        concurrency: "unbounded"
-    })
+Effect.all([program1, program2], {
+    concurrency: "unbounded"
 }).pipe(
     Effect.runPromise
 );
