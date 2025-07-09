@@ -1,7 +1,16 @@
 TODO:
 
--   Correct error handling
--   Abstraction layer, so you don't always get a new message you have to respond to + you can transfer over control
+For result:
+
+-   Effect.void to null
+-   Allow to drop result type in run.ts
+
+// Effect.try
+// Deeffect
+
+Effect.ts
+
+-   Effect.UpdateService
 
 Notes: It actually still is a structural problem and fails even the first time..
 Main Problem: You always have to yield the correct one, or the timeout causes a deadlock.. you could repeatedly check that it is ok now...
@@ -9,6 +18,10 @@ We have to start listening before sending (?!)
 
 If we respond to a message w/o awaiting a request, it should be in the headers
 
+-   Unsubscribing from bridge, etc
+-   Kernel Handler
+-   Deeffect safely
+-   Signals
 -   CleanUp eventlisteners => Get rid of some state <3
 -   Aquire/use/release?
 -   Effect.fn
