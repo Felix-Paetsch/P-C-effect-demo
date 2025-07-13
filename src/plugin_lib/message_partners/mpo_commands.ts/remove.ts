@@ -1,5 +1,5 @@
 import { Effect } from "effect";
-import { Json } from "../../../../messaging/src/utils/json";
+import { Json } from "../../utils/json";
 import { InternalMessage } from "../internal_communication/internal_message";
 import { MessagePartnerObject } from "../message_partner_object";
 

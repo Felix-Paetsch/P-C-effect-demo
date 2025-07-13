@@ -1,15 +1,15 @@
 import { MessagePartner } from "../message_partner";
 import { Effect } from "effect";
 import { createMpo, receiveMpo } from "../create_mpo";
-import { CommunicationError } from "../../internal_communication/protocol";
+import { ProtocolError } from "../../internal_communication/protocol";
 import { SignalSender } from "../../signal/sender";
-import { Json } from "../../../../../messaging/src/utils/json";
+import { Json } from "../../../utils/json";
 import { SignalReciever } from "../../signal/reciever";
 import { InternalCommunicationHandler } from "../../internal_communication/internalCommunicationHandler";
 
 declare module "../message_partner" {
     interface MessagePartner {
-        signal(): Effect.Effect<SignalSender, CommunicationError>;
+        signal(): Effect.Effect<SignalSender, ProtocolError>;
         on_signal(cb: (mpo: SignalReciever, data: Json) => void): void,
         __signal_cb: (mpo: SignalReciever, data: Json) => void
     }
@@ -17,7 +17,7 @@ declare module "../message_partner" {
 
 export default function (MPC: typeof MessagePartner) {
     const cmd = "create_signal";
-    MPC.prototype.signal = function (data: Json = null): Effect.Effect<SignalReciever, CommunicationError> {
+    MPC.prototype.signal = function (data: Json = null): Effect.Effect<SignalReciever, ProtocolError> {
         return createMpo<SignalReciever>(
             this,
             SignalReciever,

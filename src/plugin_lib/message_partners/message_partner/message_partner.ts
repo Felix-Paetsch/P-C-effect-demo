@@ -2,12 +2,7 @@ import { Context, Option, Effect, Schema, ParseResult, pipe } from "effect";
 import { Address } from "../../../../messaging/src/base/address";
 import { v4 as uuidv4 } from "uuid";
 import { MessagePartnerObject, MPOInitializationError } from "../message_partner_object";
-import { createMpo, receiveMpo } from "./create_mpo";
-import { CommunicationError, CommunicationErrorR } from "../internal_communication/protocol";
-import { Json } from "../../../../messaging/src/utils/json";
 import { Environment, EnvironmentT } from "../../../../messaging/src/base/environment";
-import { InternalMessage } from "../internal_communication/internal_message";
-import { Bridge } from "../bridge/bridge";
 import applySignalPrototypeModifier from "./commands/signal";
 import applyBridgePrototypeModifier from "./commands/bridge";
 

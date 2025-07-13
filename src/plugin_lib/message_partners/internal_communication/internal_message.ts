@@ -1,9 +1,12 @@
 import { Context, Effect, pipe, Schema } from "effect";
 import { Json } from "../../../../messaging/src/utils/json";
-import { ProtocolError, ProtocolMessage, ProtocolMessageT } from "../../../../messaging/src/protocols/protocol";
+import { ProtocolError } from "../../../../messaging/src/protocols/base/protocol_errors";
+import { ProtocolMessage, ProtocolMessageT } from "../../../../messaging/src/protocols/base/protocol_message";
+import { ProtocolCommunicationHandler, ProtocolCommunicationHandlerT } from "../../../../messaging/src/protocols/base/communicationHandler";
+import { EnvironmentT } from "../../../../messaging/src/base/environment";
 import { MessagePartnerObject } from "../message_partner_object";
 import { guard_mpo_still_active } from "./tools";
-import { CommunicationError, getInternalMessageProtocolData, InternalMessageProtocolDataSchema, to_internal_message_protocol_error } from "./protocol";
+import { ProtocolError, getInternalMessageProtocolData, InternalMessageProtocolDataSchema, to_internal_message_protocol_error } from "./protocol";
 
 export class InternalMessage {
     constructor(
@@ -14,8 +17,8 @@ export class InternalMessage {
     ) { }
 
     respond(data: Json = null, timeout?: number): Effect.Effect<
-        Effect.Effect<InternalMessage, CommunicationError, never>,
-        CommunicationError,
+        Effect.Effect<InternalMessage, ProtocolError, never>,
+        ProtocolError,
         never
     > {
         return this.pm.respond(Schema.encodeSync(InternalMessageProtocolDataSchema)({
@@ -45,8 +48,10 @@ export class InternalMessage {
                         pm, mpo, data.protocol_data, protocol
                     );
                 })),
-                Effect.provideService(ProtocolMessageT, pm)
-            ))
+                Effect.provideService(ProtocolCommunicationHandlerT, new ProtocolCommunicationHandler(pm)),
+                Effect.provideService(EnvironmentT, pm.environment)
+            )),
+            Effect.mapError(e => to_internal_message_protocol_error(e))
         )
     }
 }

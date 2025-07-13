@@ -1,14 +1,13 @@
 import { MessagePartnerObject } from "../message_partner_object";
-import { Json } from "../../../../messaging/src/utils/json";
+import { Json } from "../../utils/json";
 import { Effect } from "effect";
-import { CommunicationError } from "../internal_communication/protocol";
+import { ProtocolError } from "../internal_communication/protocol";
 import { InternalCommunicationHandler } from "../internal_communication/internalCommunicationHandler";
 import { callbackAsEffect, CallbackError, runEffectAsPromise, Result, runEffectAsPromiseFlash } from "../../../../messaging/src/utils/run";
 
 export class Bridge extends MessagePartnerObject {
-    send(data: Json): Promise<Result<null, CommunicationError>> {
+    send(data: Json): Promise<Result<null, ProtocolError>> {
         return this._send_first_internal_message("send_bridge", data).pipe(
-            Effect.andThen((e) => e),
             Effect.as(null),
             runEffectAsPromiseFlash
         );

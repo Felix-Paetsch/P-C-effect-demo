@@ -1,6 +1,6 @@
 import { Context, Effect, ParseResult, pipe, Schema, Option, Data } from "effect";
 import { MessagePartner } from "./message_partner/message_partner";
-import { CommunicationError, CommunicationErrorR, InternalCommunication, InternalMessageResult } from "./internal_communication/protocol";
+import { ProtocolError, ProtocolErrorR, InternalCommunication, InternalMessageResult } from "./internal_communication/protocol";
 import { EnvironmentT } from "../../../messaging/src/base/environment";
 import { InternalMessage } from "./internal_communication/internal_message";
 import { Json } from "../../../messaging/src/utils/json";
@@ -24,7 +24,7 @@ export class MessagePartnerObject {
     private static classCommands = new Map<Function, {
         [key: string]: {
             command: string;
-            on_first_request: (mpo: any, im: InternalCommunicationHandler, data: Json) => Effect.Effect<void, CommunicationError>;
+            on_first_request: (mpo: any, im: InternalCommunicationHandler, data: Json) => Effect.Effect<void, ProtocolError>;
         }
     }>();
 
@@ -49,28 +49,28 @@ export class MessagePartnerObject {
     }
 
     _send_command(command: string, data?: Json, timeout?: number): Effect.Effect<
-        Effect.Effect<InternalCommunicationHandler, CommunicationError>,
-        CommunicationError
+        Effect.Effect<InternalCommunicationHandler, ProtocolError>,
+        ProtocolError
     > {
         return this._send_first_internal_message(command, data, timeout)
     }
 
     _send_first_internal_message(protocol: string, data?: Json, timeout?: number): Effect.Effect<
-        Effect.Effect<InternalCommunicationHandler, CommunicationError>,
-        CommunicationError
+        Effect.Effect<InternalCommunicationHandler, ProtocolError>,
+        ProtocolError
     > {
         return InternalCommunication.run_mpo(this, protocol, data, timeout).pipe(
             Effect.provideService(EnvironmentT, this.message_partner.env)
         );
     }
 
-    _recieve_internal_message(protocol_name: string, data: Json, im: InternalMessage): Effect.Effect<void, CommunicationError> {
+    _recieve_internal_message(protocol_name: string, data: Json, im: InternalMessage): Effect.Effect<void, ProtocolError> {
         const command = (this.constructor as typeof MessagePartnerObject).get_command(protocol_name);
         if (command) {
             return command.on_first_request(this, new InternalCommunicationHandler(im), data);
         }
 
-        return Effect.fail(new CommunicationErrorR({
+        return Effect.fail(new ProtocolErrorR({
             message: `Unknown protocol: ${protocol_name}`,
             data: { protocol: protocol_name },
             Message: im
@@ -137,7 +137,7 @@ export class MessagePartnerObject {
 
     static add_command<T extends MessagePartnerObject = MessagePartnerObject>(command: {
         command: string;
-        on_first_request: (mpo: T, im: InternalCommunicationHandler, data: Json) => Effect.Effect<void, CommunicationError>;
+        on_first_request: (mpo: T, im: InternalCommunicationHandler, data: Json) => Effect.Effect<void, ProtocolError>;
     }): void {
         MessagePartnerObject._initializeClassCommands(this);
         const classCommandMap = MessagePartnerObject.classCommands.get(this)!;
@@ -146,7 +146,7 @@ export class MessagePartnerObject {
 
     static get_command(commandName: string): {
         command: string;
-        on_first_request: (mpo: any, im: InternalCommunicationHandler, data: Json) => Effect.Effect<void, CommunicationError>;
+        on_first_request: (mpo: any, im: InternalCommunicationHandler, data: Json) => Effect.Effect<void, ProtocolError>;
     } | undefined {
         let currentClass: Function = this;
         while (currentClass && currentClass !== Function.prototype) {

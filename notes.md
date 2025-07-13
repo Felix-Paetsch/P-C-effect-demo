@@ -2,19 +2,18 @@ TODO:
 
 For result:
 
--   Effect.void to null
--   Allow to drop result type in run.ts
+Result <-> Result Promise
+Assert it is something / How do we deal with that we now always have error return type?
+... just effect...
+
+-   Move message chains to protocol, as we need them also for ...
+
+Built in JSON schema serializer in effect ts
 
 // Effect.try
 // Deeffect
 
 Effect.ts
-
--   Effect.UpdateService
-
-Notes: It actually still is a structural problem and fails even the first time..
-Main Problem: You always have to yield the correct one, or the timeout causes a deadlock.. you could repeatedly check that it is ok now...
-We have to start listening before sending (?!)
 
 If we respond to a message w/o awaiting a request, it should be in the headers
 

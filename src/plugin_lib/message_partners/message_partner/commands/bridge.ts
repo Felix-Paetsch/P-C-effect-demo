@@ -1,15 +1,16 @@
 import { Effect } from "effect";
 import { Bridge } from "../../bridge/bridge";
-import { CommunicationError } from "../../internal_communication/protocol";
+import { ProtocolError } from "../../internal_communication/protocol";
 import { createMpo, receiveMpo } from "../create_mpo";
-import { Json } from "../../../../../messaging/src/utils/json";
+import { Json } from "../../../utils/json";
 import { InternalMessage } from "../../internal_communication/internal_message";
 import { MessagePartner } from "../message_partner";
 import { InternalCommunicationHandler } from "../../internal_communication/internalCommunicationHandler";
+import { EffectAsPromise, ResultPromise } from "../../../../../messaging/src/utils/run";
 
 declare module "../message_partner" {
     interface MessagePartner {
-        bridge(data?: Json): Effect.Effect<Bridge, CommunicationError>,
+        bridge(data?: Json): ResultPromise<Bridge, ProtocolError>,
         on_bridge(cb: (mpo: Bridge, data: Json) => void): void,
         __bridge_cb: (mpo: Bridge, data: Json) => void
     }
@@ -17,13 +18,14 @@ declare module "../message_partner" {
 
 export default function (MPC: typeof MessagePartner) {
     const cmd = "create_bridge";
-    MPC.prototype.bridge = function (data: Json = null): Effect.Effect<Bridge, CommunicationError> {
-        return createMpo<Bridge>(
+    MPC.prototype.bridge = function (data: Json = null): ResultPromise<Bridge, ProtocolError> {
+        const r = EffectAsPromise(createMpo<Bridge>(
             this,
             Bridge,
             cmd,
             data
-        );
+        ));
+        return r();
     }
 
     MPC.prototype.on_bridge = function (cb: (mpo: Bridge, data: Json) => void): void {
@@ -42,4 +44,5 @@ export default function (MPC: typeof MessagePartner) {
             })
         }
     });
+}
 }

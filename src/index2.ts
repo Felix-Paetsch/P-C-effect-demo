@@ -20,7 +20,7 @@ const plugin1: PluginEffect = Effect.gen(function* () {
         Effect.void
     ));
     console.log("PLUGIN1: Listening");
-    yield* Effect.never;
+    yield* Effect.void;
 }).pipe(Effect.tapError(e => Effect.logError(e)));
 
 const plugin2: PluginEffect = Effect.gen(function* () {

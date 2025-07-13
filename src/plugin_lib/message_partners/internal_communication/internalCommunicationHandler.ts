@@ -1,94 +1,45 @@
+import { Effect, Schema } from "effect";
+import { ProtocolCommunicationHandler, ProtocolCommunicationHandlerT } from "../../../../messaging/src/protocols/base/communicationHandler";
+import { ProtocolError, ProtocolErrorR } from "../../../../messaging/src/protocols/base/protocol_errors";
 import { InternalMessage } from "./internal_message";
-import { Json } from "../../../../messaging/src/utils/json";
-import { CommunicationErrorN, CommunicationErrorR } from "./protocol";
-import { Effect } from "effect";
 
-export class InternalCommunicationHandler {
+export const InternalMessageProtocolDataSchema = Schema.Struct({
+    mpo_ident: Schema.Struct({
+        message_partner_uuid: Schema.String,
+        uuid: Schema.String
+    }),
+    internal_message_protocol_name: Schema.String,
+    protocol_data: Schema.Any
+});
+
+export const getInternalMessageProtocolData = Effect.gen(function* () {
+    const ch = yield* ProtocolCommunicationHandlerT;
+    return yield* Schema.decodeUnknown(InternalMessageProtocolDataSchema)(ch.data);
+}).pipe(
+    Effect.catchAll(e => Effect.gen(function* () {
+        const ch = yield* ProtocolCommunicationHandlerT;
+        return yield* new ProtocolErrorR({
+            message: "Invalid request",
+            error: e,
+            Message: ch.message
+        })
+    }))
+)
+
+export type InternalMessageProtocolData = Schema.Schema.Type<typeof InternalMessageProtocolDataSchema>;
+export type InternalMessageResult = Effect.Effect<InternalMessage, ProtocolError>;
+
+export class InternalCommunicationHandler extends ProtocolCommunicationHandler {
     constructor(
-        protected current_im: InternalMessage
-    ) { }
-
-    send(data: Json, timeout?: number) {
-        return Effect.gen(this, function* () {
-            const imE = yield* this.current_im.respond(data, timeout);
-            return imE.pipe(
-                Effect.andThen(im => {
-                    this.current_im = im;
-                    return im;
-                }),
-                Effect.as(this),
-                Effect.onError(e => this.cleanUp())
-            );
-        }).pipe(
-            Effect.onError(e => this.cleanUp())
-        )
+        protected commHandler: ProtocolCommunicationHandler
+    ) {
+        super(commHandler.message);
     }
 
-    finishExternal(data: Json = "OK") {
-        return this.send(data, 0)
-    }
-
-    close(data: Json = "OK") {
-        return this.current_im.respond(data, 0)
-    }
-
-    awaitResponse(data: Json, timeout?: number) {
-        return Effect.gen(this, function* () {
-            const im = yield* yield* this.current_im.respond(data, timeout);
-            this.current_im = im;
-            return this;
-        }).pipe(
-            Effect.onError(e => this.cleanUp())
-        )
-    }
-
-    private cleanUp() {
-        return Effect.all(this.error_handlers).pipe(Effect.andThen(() => Effect.void))
-    }
-    private error_handlers: Effect.Effect<void, never, never>[] = [];
-    onMessageError(e: Effect.Effect<void, never, never>) {
-        this.error_handlers.push(e);
-    }
-
-    get data(): Json {
-        return this.current_im.data;
-    }
-
-    errorN(obj: {
-        message: string;
-        data?: Json;
-        error?: Error
-    }) {
-        return new CommunicationErrorN({
-            message: obj.message,
-            data: obj.data,
-            error: obj.error
-        })
-    }
-    errorR(obj: {
-        message: string;
-        data?: Json;
-        error?: Error
-    }) {
-        return new CommunicationErrorR({
-            message: obj.message,
-            data: obj.data,
-            error: obj.error,
-            Message: this.current_im
-        })
-    }
-    asErrorR<E extends Error>(err: E) {
-        return this.errorR({
-            message: err.message,
-            data: (err as any).data || null,
-            error: err
-        })
-    }
-    asErrorN<E extends Error>(err: E) {
-        return this.errorN({
-            message: err.message,
-            data: (err as any).data || null,
-            error: err
-        })
+    get protocol_data(): Effect.Effect<InternalMessageProtocolData, ProtocolError> {
+        return Effect.gen(function* () {
+            const data = yield* getInternalMessageProtocolData;
+            return data;
+        }).pipe(Effect.provideService(ProtocolCommunicationHandlerT, this.commHandler))
     }
 }

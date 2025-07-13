@@ -1,58 +1,61 @@
 import { Effect, pipe, Schema } from "effect";
-import { ProtocolErrorR, ProtocolMessageT } from "../../../../messaging/src/protocols/protocol";
+import { ProtocolErrorR, ProtocolError } from "../../../../messaging/src/protocols/base/protocol_errors";
+import { ProtocolMessage, ProtocolMessageT } from "../../../../messaging/src/protocols/base/protocol_message";
+import { ProtocolCommunicationHandlerT } from "../../../../messaging/src/protocols/base/communicationHandler";
 import { MessagePartner } from "../message_partner/message_partner";
 import { MessagePartnerObject, MessagePartnerObjectIdent } from "../message_partner_object";
 import { Protocol } from "../../../../messaging/src/protocols/protocol";
-import { ProtocolError } from "../../../../messaging/src/protocols/protocol";
 import { EnvironmentT } from "../../../../messaging/src/base/environment";
 
 export const MessagePartnerNotFoundMessage = "Message partner not found" as const;
 export const MessagePartnerObjectNotFoundMessage = "Message partner object not found" as const;
 export const MessagePartnerGotRemovedMessage = "Message partner object was removed" as const;
 
-export function get_message_partner(msg_partner_ident: string): Effect.Effect<MessagePartner, ProtocolError, ProtocolMessageT> {
+export function get_message_partner(msg_partner_ident: string): Effect.Effect<MessagePartner, ProtocolError, ProtocolCommunicationHandlerT> {
     return pipe(
         MessagePartner.get_message_partner(msg_partner_ident),
         Effect.andThen(mp => mp),
         Effect.catchAll(e => Effect.gen(function* () {
+            const ch = yield* ProtocolCommunicationHandlerT;
             return yield* new ProtocolErrorR({
                 message: MessagePartnerNotFoundMessage,
                 error: e,
-                Message: yield* ProtocolMessageT
+                Message: ch.message
             })
         })),
         Effect.provideServiceEffect(EnvironmentT, pipe(
-            ProtocolMessageT,
-            Effect.andThen(pm => pm.environment)
-        )),
-        Protocol.fail_with_response
-    )
-}
-
-export function get_message_partner_object(msg_partner_ident: MessagePartnerObjectIdent): Effect.Effect<MessagePartnerObject, ProtocolError, ProtocolMessageT> {
-    return pipe(
-        Schema.decodeUnknown(MessagePartnerObject.MessagePartnerObjectFromIdent)(msg_partner_ident),
-        Effect.catchAll(e => Effect.gen(function* () {
-            return yield* new ProtocolErrorR({
-                message: MessagePartnerObjectNotFoundMessage,
-                error: e,
-                Message: yield* ProtocolMessageT
-            })
-        })),
-        Effect.provideServiceEffect(EnvironmentT, pipe(
-            ProtocolMessageT,
-            Effect.andThen(pm => pm.environment)
+            ProtocolCommunicationHandlerT,
+            Effect.andThen(ch => ch.message.environment)
         ))
     )
 }
 
-export function guard_mpo_still_active(mpo: MessagePartnerObject): Effect.Effect<MessagePartnerObject, ProtocolErrorR, ProtocolMessageT> {
+export function get_message_partner_object(msg_partner_ident: MessagePartnerObjectIdent): Effect.Effect<MessagePartnerObject, ProtocolError, ProtocolCommunicationHandlerT> {
+    return pipe(
+        Schema.decodeUnknown(MessagePartnerObject.MessagePartnerObjectFromIdent)(msg_partner_ident),
+        Effect.catchAll(e => Effect.gen(function* () {
+            const ch = yield* ProtocolCommunicationHandlerT;
+            return yield* new ProtocolErrorR({
+                message: MessagePartnerObjectNotFoundMessage,
+                error: e,
+                Message: ch.message
+            })
+        })),
+        Effect.provideServiceEffect(EnvironmentT, pipe(
+            ProtocolCommunicationHandlerT,
+            Effect.andThen(ch => ch.message.environment)
+        ))
+    )
+}
+
+export function guard_mpo_still_active(mpo: MessagePartnerObject): Effect.Effect<MessagePartnerObject, ProtocolErrorR, ProtocolCommunicationHandlerT> {
     return Effect.gen(function* () {
         if (mpo.is_removed()) {
+            const ch = yield* ProtocolCommunicationHandlerT;
             const err = new ProtocolErrorR({
                 message: MessagePartnerGotRemovedMessage,
                 error: new Error(MessagePartnerGotRemovedMessage),
-                Message: yield* ProtocolMessageT
+                Message: ch.message
             });
             return yield* err;
         }

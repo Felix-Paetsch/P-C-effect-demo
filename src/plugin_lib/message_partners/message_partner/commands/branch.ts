@@ -1,13 +1,13 @@
 import { Effect } from "effect";
-import { CommunicationError } from "../../internal_communication/protocol";
+import { ProtocolError } from "../../internal_communication/protocol";
 import { createMpo, receiveMpo } from "../create_mpo";
-import { Json } from "../../../../../messaging/src/utils/json";
+import { Json } from "../../../utils/json";
 import { MessagePartner } from "../message_partner";
 import { InternalCommunicationHandler } from "../../internal_communication/internalCommunicationHandler";
 
 declare module "../message_partner" {
     interface MessagePartner {
-        branch(data: Json): Effect.Effect<MessagePartner, CommunicationError>,
+        branch(data: Json): Effect.Effect<MessagePartner, ProtocolError>,
         on_branch(cb: (mpo: MessagePartner, data: Json) => void): void,
         __branch_cb: (mpo: MessagePartner, data: Json) => void
     }
@@ -15,7 +15,7 @@ declare module "../message_partner" {
 
 export default function (MPC: typeof MessagePartner) {
     const cmd = "create_message_partner";
-    MPC.prototype.branch = function (data: Json = null): Effect.Effect<MessagePartner, CommunicationError> {
+    MPC.prototype.branch = function (data: Json = null): Effect.Effect<MessagePartner, ProtocolError> {
         return createMpo<MessagePartner>(
             this,
             MessagePartnerFactory,
@@ -47,3 +47,8 @@ const MessagePartnerFactory = class {
         return new MessagePartner(mpo.address, mpo.env, uuid);
     }
 } as { new(mpo: MessagePartner, uuid: string): MessagePartner }
+} as { new (mpo: MessagePartner, uuid: string): MessagePartner }
+} as { new (mpo: MessagePartner, uuid: string): MessagePartner }
+} as { new (mpo: MessagePartner, uuid: string): MessagePartner }
+} as { new (mpo: MessagePartner, uuid: string): MessagePartner }
+} as { new (mpo: MessagePartner, uuid: string): MessagePartner }
