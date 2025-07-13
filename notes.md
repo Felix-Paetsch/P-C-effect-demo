@@ -1,3 +1,11 @@
+The current plan:
+
+Update Plugin_Lib messaging
+Decouple a bit more from internal messages. Internal communication handler shadows a bit the usual communication handler
+Remove internal_message in favor of checks in the internalCommunicationHandler
+check when instanciating internalcommunication handler, that protocol message actually satisfies the correct things
+Make everything work with this.
+
 TODO:
 
 For result:

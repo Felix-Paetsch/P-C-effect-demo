@@ -7,8 +7,7 @@ import { MessagePartnerObject } from "../message_partner_object";
 import { Json } from "../../../../messaging/src/utils/json";
 import { EnvironmentT } from "../../../../messaging/src/base/environment";
 import { get_message_partner_object } from "./tools";
-import { InternalMessage } from "./internal_message";
-import { getInternalMessageProtocolData, InternalCommunicationHandler, InternalMessageProtocolDataSchema } from "./internalCommunicationHandler";
+import { InternalCommunicationHandler, InternalMessageProtocolDataSchema } from "./internalCommunicationHandler";
 import { Address } from "../../../../messaging/src/base/address";
 
 
@@ -60,21 +59,17 @@ export class InternalCommunicationProtocol extends Protocol<Effect.Effect<Intern
         );
     }
 
-    on_callback(ch: InternalCommunicationHandler): Effect.Effect<void, never, never> {
+    on_callback = (ch: InternalCommunicationHandler): Effect.Effect<void, never, never> => {
         return Effect.gen(function* () {
-            const data = yield* ch.protocol_data;
-            const mpo = yield* get_message_partner_object(data.mpo_ident);
-            const im = new InternalMessage(
-                ch.message,
-                mpo,
-                data.protocol_data,
-                data.internal_message_protocol_name
+            const data = ch.data;
+            const mpo = yield* get_message_partner_object(data.mpo_ident).pipe(
+                Effect.provideService(ProtocolCommunicationHandlerT, ch)
             );
 
             yield* mpo._recieve_internal_message(
                 data.internal_message_protocol_name,
                 data.protocol_data,
-                im
+                ch
             );
         }).pipe(Effect.ignore)
     }

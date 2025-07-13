@@ -35,10 +35,9 @@ export function get_message_partner_object(msg_partner_ident: MessagePartnerObje
         Schema.decodeUnknown(MessagePartnerObject.MessagePartnerObjectFromIdent)(msg_partner_ident),
         Effect.catchAll(e => Effect.gen(function* () {
             const ch = yield* ProtocolCommunicationHandlerT;
-            return yield* new ProtocolErrorR({
+            return yield* ch.errorR({
                 message: MessagePartnerObjectNotFoundMessage,
-                error: e,
-                Message: ch.message
+                error: e
             })
         })),
         Effect.provideServiceEffect(EnvironmentT, pipe(
@@ -52,12 +51,10 @@ export function guard_mpo_still_active(mpo: MessagePartnerObject): Effect.Effect
     return Effect.gen(function* () {
         if (mpo.is_removed()) {
             const ch = yield* ProtocolCommunicationHandlerT;
-            const err = new ProtocolErrorR({
+            return yield* ch.errorR({
                 message: MessagePartnerGotRemovedMessage,
-                error: new Error(MessagePartnerGotRemovedMessage),
-                Message: ch.message
+                error: new Error(MessagePartnerGotRemovedMessage)
             });
-            return yield* err;
         }
 
         return mpo;
