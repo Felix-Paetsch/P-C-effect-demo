@@ -1,9 +1,9 @@
 import { Effect } from "effect";
-import { ProtocolError } from "../../internal_communication/protocol";
-import { createMpo, receiveMpo } from "../create_mpo";
-import { Json } from "../../../utils/json";
-import { MessagePartner } from "../message_partner";
+import { ProtocolError } from "../../../../../messaging/src/protocols/base/protocol_errors";
+import { Json } from "../../../../../messaging/src/utils/json";
 import { InternalCommunicationHandler } from "../../internal_communication/internalCommunicationHandler";
+import { createMpo, receiveMpo } from "../create_mpo";
+import { MessagePartner } from "../message_partner";
 
 declare module "../message_partner" {
     interface MessagePartner {
@@ -47,8 +47,3 @@ const MessagePartnerFactory = class {
         return new MessagePartner(mpo.address, mpo.env, uuid);
     }
 } as { new(mpo: MessagePartner, uuid: string): MessagePartner }
-} as { new (mpo: MessagePartner, uuid: string): MessagePartner }
-} as { new (mpo: MessagePartner, uuid: string): MessagePartner }
-} as { new (mpo: MessagePartner, uuid: string): MessagePartner }
-} as { new (mpo: MessagePartner, uuid: string): MessagePartner }
-} as { new (mpo: MessagePartner, uuid: string): MessagePartner }

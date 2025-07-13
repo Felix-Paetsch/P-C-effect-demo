@@ -1,9 +1,9 @@
-import { MessagePartnerObject } from "../message_partner_object";
-import { Json } from "../../utils/json";
 import { Effect } from "effect";
-import { ProtocolError } from "../internal_communication/protocol";
+import { ProtocolError } from "../../../../messaging/src/protocols/base/protocol_errors";
+import { Json } from "../../../../messaging/src/utils/json";
+import { callbackAsEffect, CallbackError, Result, runEffectAsPromise, runEffectAsPromiseFlash } from "../../../../messaging/src/utils/run";
 import { InternalCommunicationHandler } from "../internal_communication/internalCommunicationHandler";
-import { callbackAsEffect, CallbackError, runEffectAsPromise, Result, runEffectAsPromiseFlash } from "../../../../messaging/src/utils/run";
+import { MessagePartnerObject } from "../message_partner_object";
 
 export class Bridge extends MessagePartnerObject {
     send(data: Json): Promise<Result<null, ProtocolError>> {

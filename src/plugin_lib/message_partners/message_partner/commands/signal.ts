@@ -1,11 +1,11 @@
-import { MessagePartner } from "../message_partner";
 import { Effect } from "effect";
-import { createMpo, receiveMpo } from "../create_mpo";
-import { ProtocolError } from "../../internal_communication/protocol";
-import { SignalSender } from "../../signal/sender";
-import { Json } from "../../../utils/json";
-import { SignalReciever } from "../../signal/reciever";
+import { ProtocolError } from "../../../../../messaging/src/protocols/base/protocol_errors";
+import { Json } from "../../../../../messaging/src/utils/json";
 import { InternalCommunicationHandler } from "../../internal_communication/internalCommunicationHandler";
+import { SignalReciever } from "../../signal/reciever";
+import { SignalSender } from "../../signal/sender";
+import { createMpo, receiveMpo } from "../create_mpo";
+import { MessagePartner } from "../message_partner";
 
 declare module "../message_partner" {
     interface MessagePartner {

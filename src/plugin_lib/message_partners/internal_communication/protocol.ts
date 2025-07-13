@@ -1,14 +1,12 @@
 import { Effect, pipe, Schema } from "effect";
-import { ProtocolErrorN, ProtocolErrorR, ProtocolError, fail_as_protocol_error } from "../../../../messaging/src/protocols/base/protocol_errors";
-import { ProtocolMessage, ProtocolMessageT } from "../../../../messaging/src/protocols/base/protocol_message";
-import { ProtocolCommunicationHandler, ProtocolCommunicationHandlerT } from "../../../../messaging/src/protocols/base/communicationHandler";
-import { Protocol } from "../../../../messaging/src/protocols/protocol";
-import { MessagePartnerObject } from "../message_partner_object";
-import { Json } from "../../../../messaging/src/utils/json";
 import { EnvironmentT } from "../../../../messaging/src/base/environment";
-import { get_message_partner_object } from "./tools";
+import { ProtocolCommunicationHandlerT } from "../../../../messaging/src/protocols/base/communicationHandler";
+import { fail_as_protocol_error, ProtocolError, ProtocolErrorN } from "../../../../messaging/src/protocols/base/protocol_errors";
+import { Protocol } from "../../../../messaging/src/protocols/protocol";
+import { Json } from "../../../../messaging/src/utils/json";
+import { MessagePartnerObject } from "../message_partner_object";
 import { InternalCommunicationHandler, InternalMessageProtocolDataSchema } from "./internalCommunicationHandler";
-import { Address } from "../../../../messaging/src/base/address";
+import { get_message_partner_object } from "./tools";
 
 
 
@@ -44,9 +42,8 @@ export class InternalCommunicationProtocol extends Protocol<Effect.Effect<Intern
             )
 
             const env = yield* EnvironmentT;
-
             return handlerE.pipe(
-                Effect.andThen(handler => new InternalCommunicationHandler(handler)),
+                Effect.andThen(handler => InternalCommunicationHandler.fromInternalMessage(handler.__current_pm)),
                 Effect.provideService(EnvironmentT, env)
             )
         }).pipe(fail_as_protocol_error)
@@ -55,7 +52,8 @@ export class InternalCommunicationProtocol extends Protocol<Effect.Effect<Intern
     get on_first_request(): Effect.Effect<void, ProtocolError, ProtocolCommunicationHandlerT> {
         return pipe(
             ProtocolCommunicationHandlerT,
-            Effect.andThen(ch => this.on_callback(new InternalCommunicationHandler(ch))),
+            Effect.andThen(pch => InternalCommunicationHandler.fromInternalMessage(pch.__current_pm)),
+            Effect.andThen(ich => this.on_callback(ich))
         );
     }
 

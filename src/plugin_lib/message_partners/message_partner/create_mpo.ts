@@ -1,11 +1,10 @@
-import { MessagePartnerObject } from "../message_partner_object";
-import { Effect, Either } from "effect";
-import { ProtocolError, ProtocolErrorR } from "../internal_communication/protocol";
-import { Json } from "../../utils/json";
-import { InternalMessage } from "../internal_communication/internal_message";
+import { Effect } from "effect";
 import { v4 as uuidv4 } from 'uuid';
-import { MessagePartner } from "./message_partner";
+import { fail_as_protocol_error, ProtocolError } from "../../../../messaging/src/protocols/base/protocol_errors";
+import { Json } from "../../../../messaging/src/utils/json";
 import { InternalCommunicationHandler } from "../internal_communication/internalCommunicationHandler";
+import { MessagePartnerObject } from "../message_partner_object";
+import { MessagePartner } from "./message_partner";
 
 export function createMpo<T extends MessagePartnerObject>(
     messagePartner: MessagePartner,
@@ -15,7 +14,7 @@ export function createMpo<T extends MessagePartnerObject>(
 ): Effect.Effect<T, ProtocolError> {
     return Effect.gen(function* () {
         const im = yield* yield* messagePartner._send_command(command, data);
-        const uuid = im.data as string;
+        const uuid = im.protocol_data as string;
 
         if (!uuid || typeof uuid !== "string") return yield* im.errorR({ message: "Expected uuid" });
         const mpo = yield* MessagePartnerObject.make(messagePartner, uuid, senderClass).pipe(
@@ -24,7 +23,7 @@ export function createMpo<T extends MessagePartnerObject>(
         im.onMessageError(mpo.remove());
 
         yield* im.awaitResponse("OK");
-        const confirmationData = im.data as string;
+        const confirmationData = im.protocol_data as string;
 
         if (confirmationData !== "OK") {
             return yield* im.errorR({
@@ -35,7 +34,9 @@ export function createMpo<T extends MessagePartnerObject>(
 
         yield* im.finishExternal();
         return mpo;
-    })
+    }).pipe(
+        fail_as_protocol_error
+    )
 }
 
 export function receiveMpo<T extends MessagePartnerObject>(
@@ -47,7 +48,7 @@ export function receiveMpo<T extends MessagePartnerObject>(
     return Effect.gen(function* () {
         const uuid = uuidv4();
         yield* im.awaitResponse(uuid);
-        const okData = im.data as string;
+        const okData = im.protocol_data as string;
         if (okData !== "OK") {
             return yield* im.errorR({
                 message: "Did not receive ok from sender",
@@ -60,6 +61,8 @@ export function receiveMpo<T extends MessagePartnerObject>(
         );
 
         cb(mpo_object);
-        yield* im.close();
-    })
+        yield* im.close("OK", true);
+    }).pipe(
+        fail_as_protocol_error
+    )
 }

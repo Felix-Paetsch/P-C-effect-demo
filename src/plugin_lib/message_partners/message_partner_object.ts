@@ -1,11 +1,11 @@
-import { Context, Effect, ParseResult, pipe, Schema, Option, Data } from "effect";
-import { MessagePartner } from "./message_partner/message_partner";
-import { ProtocolError, ProtocolErrorR, InternalCommunication, InternalMessageResult } from "./internal_communication/protocol";
+import { Context, Data, Effect, Option, ParseResult, pipe, Schema } from "effect";
 import { EnvironmentT } from "../../../messaging/src/base/environment";
-import { InternalMessage } from "./internal_communication/internal_message";
+import { ProtocolError, ProtocolErrorR } from "../../../messaging/src/protocols/base/protocol_errors";
 import { Json } from "../../../messaging/src/utils/json";
-import applyRemovePrototypeModifier from "./mpo_commands.ts/remove";
 import { InternalCommunicationHandler } from "./internal_communication/internalCommunicationHandler";
+import { InternalCommunication } from "./internal_communication/protocol";
+import { MessagePartner } from "./message_partner/message_partner";
+import applyRemovePrototypeModifier from "./mpo_commands.ts/remove";
 
 export class MPOInitializationError extends Data.TaggedError("MPOInitializationError")<{
     message_partner_uuid: string;
@@ -64,16 +64,16 @@ export class MessagePartnerObject {
         );
     }
 
-    _recieve_internal_message(protocol_name: string, data: Json, im: InternalMessage): Effect.Effect<void, ProtocolError> {
+    _recieve_internal_message(protocol_name: string, data: Json, ich: InternalCommunicationHandler): Effect.Effect<void, ProtocolError> {
         const command = (this.constructor as typeof MessagePartnerObject).get_command(protocol_name);
         if (command) {
-            return command.on_first_request(this, new InternalCommunicationHandler(im), data);
+            return command.on_first_request(this, ich, data);
         }
 
         return Effect.fail(new ProtocolErrorR({
             message: `Unknown protocol: ${protocol_name}`,
             data: { protocol: protocol_name },
-            Message: im
+            Message: ich.message
         }));
     }
 

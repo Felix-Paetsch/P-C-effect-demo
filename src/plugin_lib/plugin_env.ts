@@ -1,8 +1,8 @@
 import { Address } from "../../messaging/src/base/address";
 import { Environment } from "../../messaging/src/base/environment";
-import { Json } from "./utils/json";
+import { ProtocolError } from "../../messaging/src/protocols/base/protocol_errors";
+import { Json } from "../../messaging/src/utils/json";
 import { ResultPromise } from "../../messaging/src/utils/run";
-import { ProtocolError } from "./message_partners/internal_communication/protocol";
 import { MessagePartner } from "./message_partners/message_partner/message_partner";
 
 export class PluginEnvironment {

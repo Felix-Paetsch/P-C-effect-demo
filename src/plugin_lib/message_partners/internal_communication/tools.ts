@@ -1,11 +1,9 @@
 import { Effect, pipe, Schema } from "effect";
-import { ProtocolErrorR, ProtocolError } from "../../../../messaging/src/protocols/base/protocol_errors";
-import { ProtocolMessage, ProtocolMessageT } from "../../../../messaging/src/protocols/base/protocol_message";
+import { EnvironmentT } from "../../../../messaging/src/base/environment";
 import { ProtocolCommunicationHandlerT } from "../../../../messaging/src/protocols/base/communicationHandler";
+import { ProtocolError, ProtocolErrorR } from "../../../../messaging/src/protocols/base/protocol_errors";
 import { MessagePartner } from "../message_partner/message_partner";
 import { MessagePartnerObject, MessagePartnerObjectIdent } from "../message_partner_object";
-import { Protocol } from "../../../../messaging/src/protocols/protocol";
-import { EnvironmentT } from "../../../../messaging/src/base/environment";
 
 export const MessagePartnerNotFoundMessage = "Message partner not found" as const;
 export const MessagePartnerObjectNotFoundMessage = "Message partner object not found" as const;

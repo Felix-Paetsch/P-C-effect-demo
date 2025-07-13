@@ -1,12 +1,10 @@
-import { Effect } from "effect";
-import { Bridge } from "../../bridge/bridge";
-import { ProtocolError } from "../../internal_communication/protocol";
-import { createMpo, receiveMpo } from "../create_mpo";
-import { Json } from "../../../utils/json";
-import { InternalMessage } from "../../internal_communication/internal_message";
-import { MessagePartner } from "../message_partner";
-import { InternalCommunicationHandler } from "../../internal_communication/internalCommunicationHandler";
+import { ProtocolError } from "../../../../../messaging/src/protocols/base/protocol_errors";
+import { Json } from "../../../../../messaging/src/utils/json";
 import { EffectAsPromise, ResultPromise } from "../../../../../messaging/src/utils/run";
+import { Bridge } from "../../bridge/bridge";
+import { InternalCommunicationHandler } from "../../internal_communication/internalCommunicationHandler";
+import { createMpo, receiveMpo } from "../create_mpo";
+import { MessagePartner } from "../message_partner";
 
 declare module "../message_partner" {
     interface MessagePartner {
@@ -44,5 +42,4 @@ export default function (MPC: typeof MessagePartner) {
             })
         }
     });
-}
 }

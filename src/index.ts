@@ -1,9 +1,9 @@
 import { Effect } from "effect";
-import { createLocalEnvironment, Environment } from "../messaging/src/base/environment";
 import { LocalAddress } from "../messaging/src/base/address";
-import { InternalCommunication } from "./plugin_lib/message_partners/internal_communication/protocol";
-import { MessagePartner, MessagePartnerT } from "./plugin_lib/message_partners/message_partner/message_partner";
+import { createLocalEnvironment } from "../messaging/src/base/environment";
 import { callbackAsEffect } from "../messaging/src/utils/run";
+import { InternalCommunication } from "./plugin_lib/message_partners/internal_communication/protocol";
+import { MessagePartner } from "./plugin_lib/message_partners/message_partner/message_partner";
 import { PluginEnvironment } from "./plugin_lib/plugin_env";
 
 function LocalPluginEnv(address: string) {
@@ -53,8 +53,8 @@ const plugin2 = async (env: PluginEnvironment) => {
 }
 
 Effect.all([
-    callbackAsEffect(plugin1)(new PluginEnvironment(env1)),
-    callbackAsEffect(plugin2)(new PluginEnvironment(env2))
+    callbackAsEffect(plugin1)(new PluginEnvironment(env1, new LocalAddress("kernel"), "plugin1")),
+    callbackAsEffect(plugin2)(new PluginEnvironment(env2, new LocalAddress("kernel"), "plugin2"))
 ], {
     concurrency: "unbounded"
 }).pipe(
