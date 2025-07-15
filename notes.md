@@ -7,6 +7,19 @@ check when instanciating internalcommunication handler, that protocol message ac
 Make everything work with this.
 
 TODO:
+Reduce possible Errors with protocols
+Abstract from Protocols? (deabstract?)
+What is wierd about the usage:
+
+-   We use mostly singletons
+-   We mainly want the middleware and one specific send fn
+-   Sometimes asymmetric
+-   Often dont use callback
+-   Return result is a joke..
+-   When getting the middleware for a protocol, we can directly register it aswell
+-   Different Protocols do very similar things...
+
+-   Bind things as early as you can
 
 For result:
 
