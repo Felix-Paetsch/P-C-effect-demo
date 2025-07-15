@@ -32,7 +32,9 @@ const main_plugin = async (env: PluginEnvironment) => {
         throw res_1.error;
     }
     const mp = res_1.result;
+
     const res_2 = await mp.bridge();
+    console.log(res_2);
     if (res_2.is_error) {
         throw res_2.error;
     }

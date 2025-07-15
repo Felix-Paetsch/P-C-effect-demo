@@ -37,12 +37,12 @@ export class PluginEnvironment {
                 const pluginAddress = yield* Schema.decodeUnknown(Address.AddressFromString)(responseData);
 
                 const uuid = uuidv4();
-                console.log("HERE WE GO");
                 yield* this._send_to_plugin_env(pluginAddress, "get_plugin", { uuid }, 1000).pipe(
                     Effect.provideService(EnvironmentT, this.env)
                 );
 
                 const messagePartner = new MessagePartner(pluginAddress, this.env, uuid);
+                console.log("MP SEND");
                 return messagePartner;
             }).pipe(
                 Effect.mapError(e => new ProtocolErrorN({
@@ -67,9 +67,11 @@ export class PluginEnvironment {
 
     protected _recieve_plugin_command(command: string, data: Json, handler: ProtocolCommunicationHandler): Effect.Effect<void, ProtocolError> {
         return Effect.gen(this, function* () {
-            console.log("RECIEVE");
             if (command === "get_plugin") {
-                const message_partner = new MessagePartner(handler.message.target, this.env);
+                const requestData = data as { uuid?: string } | null;
+                const uuid = requestData?.uuid;
+                const message_partner = new MessagePartner(handler.message.target, this.env, uuid);
+                console.log("MP RECIEVE");
                 yield* this._on_plugin_request(message_partner, data).pipe(
                     Effect.mapError(e => handler.asErrorR(e))
                 );
@@ -92,7 +94,10 @@ export class PluginEnvironment {
                     instance_uuid
                 );
 
-                const pluginProtocol = RecieveFromPluginEnvMessageProtocol(pluginEnv);
+                const pluginProtocol = RecieveFromPluginEnvMessageProtocol();
+                pluginProtocol.on(({ command, data, handler }) => {
+                    return pluginEnv._recieve_plugin_command(command, data, handler).pipe(Effect.ignore);
+                });
                 return pluginProtocol.middleware(env).pipe(
                     Effect.andThen(mw => env.useMiddleware(mw)),
                     Effect.andThen(() => pluginEnv)

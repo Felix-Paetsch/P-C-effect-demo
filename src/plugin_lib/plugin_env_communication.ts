@@ -1,10 +1,9 @@
 import { Effect, Schema } from "effect";
 import { Address } from "../../messaging/src/base/address";
-import { ProtocolCommunicationHandlerT } from "../../messaging/src/protocols/base/communicationHandler";
+import { ProtocolCommunicationHandler, ProtocolCommunicationHandlerT } from "../../messaging/src/protocols/base/communicationHandler";
 import { ProtocolRequestHalf, ProtocolResponseHalf } from "../../messaging/src/protocols/base/protocol_half";
 import { Protocol } from "../../messaging/src/protocols/protocol";
 import { Json } from "../../messaging/src/utils/json";
-import { PluginEnvironment } from "./plugin_env";
 
 const ident = {
     protocol_name: "plugin_to_plugin",
@@ -30,23 +29,28 @@ export function SendToPluginEnvMessageProtocol() {
     })
 }
 
-export function RecieveFromPluginEnvMessageProtocol(plugin_env: PluginEnvironment) {
-    return ProtocolResponseHalf(ident, function (this: Protocol<void, void>) {
+export function RecieveFromPluginEnvMessageProtocol() {
+    return ProtocolResponseHalf(ident, function (this: Protocol<void, {
+        command: string,
+        data: Json,
+        handler: ProtocolCommunicationHandler
+    }>) {
         return Effect.gen(this, function* () {
             const handler = yield* ProtocolCommunicationHandlerT;
             const res_data = handler.data;
 
-            const {
-                command,
-                data
-            } = yield* Schema.decodeUnknown(Schema.Struct({
+            const res = yield* Schema.decodeUnknown(Schema.Struct({
                 command: Schema.String,
                 data: Schema.Any
             }))(res_data).pipe(
                 Effect.mapError(handler.asErrorR)
             );
 
-            return plugin_env.handle_plugin_command(command, data, handler);
+            yield* this._on_callback({
+                command: res.command,
+                data: res.data,
+                handler
+            });
         });
     });
 } 

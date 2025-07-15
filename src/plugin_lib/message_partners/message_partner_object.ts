@@ -5,7 +5,8 @@ import { Json } from "../../../messaging/src/utils/json";
 import { InternalCommunicationHandler } from "./internal_communication/internalCommunicationHandler";
 import { InternalCommunication } from "./internal_communication/protocol";
 import { MessagePartner } from "./message_partner/message_partner";
-import applyRemovePrototypeModifier from "./mpo_commands.ts/remove";
+import applyPingPrototypeModifier from "./mpo_commands/ping";
+import applyRemovePrototypeModifier from "./mpo_commands/remove";
 
 export class MPOInitializationError extends Data.TaggedError("MPOInitializationError")<{
     message_partner_uuid: string;
@@ -169,3 +170,4 @@ export class MessagePartnerObject {
 export class MessagePartnerObjectT extends Context.Tag("MessagePartnerObjectT")<MessagePartnerObjectT, MessagePartnerObject>() { }
 
 applyRemovePrototypeModifier(MessagePartnerObject);
+applyPingPrototypeModifier(MessagePartnerObject);

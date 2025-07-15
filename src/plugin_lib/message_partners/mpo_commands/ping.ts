@@ -1,0 +1,35 @@
+import { Effect, Either } from "effect";
+import { fail_as_protocol_error } from "../../../../messaging/src/protocols/base/protocol_errors";
+import { Json } from "../../../../messaging/src/utils/json";
+import { ResultPromise, runEffectAsPromise } from "../../../../messaging/src/utils/run";
+import { InternalCommunicationHandler } from "../internal_communication/internalCommunicationHandler";
+import { MessagePartnerObject } from "../message_partner_object";
+
+declare module "../message_partner_object" {
+    interface MessagePartnerObject {
+        ping(): ResultPromise<true, Error>;
+    }
+}
+
+export default function (MPC: typeof MessagePartnerObject) {
+    MPC.add_command({
+        command: "ping",
+        on_first_request: (mp: MessagePartnerObject, ich: InternalCommunicationHandler, data: Json) => {
+            return Effect.gen(mp, function* () {
+                return yield* ich.respond("PONG");
+            }).pipe(
+                fail_as_protocol_error
+            )
+        }
+    });
+
+    MPC.prototype.ping = function () {
+        return this._send_first_internal_message("ping").pipe(
+            Effect.map(() => Either.right(true as const)),
+            Effect.catchAll((error) => Effect.succeed(Either.left(error)))
+        ).pipe(
+            Effect.andThen(e => e),
+            runEffectAsPromise
+        )
+    }
+} 
