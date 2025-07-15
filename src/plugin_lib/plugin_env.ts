@@ -1,4 +1,5 @@
 import { Effect, Schema } from "effect";
+import { v4 as uuidv4 } from "uuid";
 import { Address } from "../../messaging/src/base/address";
 import { Environment, EnvironmentInactiveError, EnvironmentT } from "../../messaging/src/base/environment";
 import { ProtocolCommunicationHandler } from "../../messaging/src/protocols/base/communicationHandler";
@@ -30,22 +31,18 @@ export class PluginEnvironment {
                     plugin_ident,
                     1000
                 ).pipe(
-                    Effect.provideService(EnvironmentT, this.env),
-                    Effect.tap(() => console.log("HERE WE ARE")),
-                    Effect.tapError((e) => Effect.gen(this, function* () {
-                        console.log("ERROR", e)
-                    }))
+                    Effect.provideService(EnvironmentT, this.env)
                 );
 
-                console.log("HERE WE ARE");
-                console.log("RESPONSE DATA", responseData);
-
-                // The kernel returns the serialized address of the plugin
                 const pluginAddress = yield* Schema.decodeUnknown(Address.AddressFromString)(responseData);
 
-                // Create a message partner for communication with the plugin
-                const messagePartner = new MessagePartner(pluginAddress, this.env);
+                const uuid = uuidv4();
+                console.log("HERE WE GO");
+                yield* this._send_to_plugin_env(pluginAddress, "get_plugin", { uuid }, 1000).pipe(
+                    Effect.provideService(EnvironmentT, this.env)
+                );
 
+                const messagePartner = new MessagePartner(pluginAddress, this.env, uuid);
                 return messagePartner;
             }).pipe(
                 Effect.mapError(e => new ProtocolErrorN({
@@ -68,13 +65,9 @@ export class PluginEnvironment {
         return this.send_to_plugin_protocol.run_command(target_address, command, data, timeout);
     }
 
-    // Handle incoming plugin requests (for the receiving plugin)
-    handle_plugin_command(command: string, data: Json, handler: ProtocolCommunicationHandler): Effect.Effect<void, ProtocolError> {
-        return this._recieve_plugin_command(command, data, handler);
-    }
-
     protected _recieve_plugin_command(command: string, data: Json, handler: ProtocolCommunicationHandler): Effect.Effect<void, ProtocolError> {
         return Effect.gen(this, function* () {
+            console.log("RECIEVE");
             if (command === "get_plugin") {
                 const message_partner = new MessagePartner(handler.message.target, this.env);
                 yield* this._on_plugin_request(message_partner, data).pipe(
@@ -90,7 +83,7 @@ export class PluginEnvironment {
         kernel_address: Address,
         instance_uuid: string
     ): Effect.Effect<PluginEnvironment, EnvironmentInactiveError, never> {
-        return SendToKernelMessageProtocol().request_middleware(env).pipe(
+        return SendToKernelMessageProtocol().middleware(env).pipe(
             Effect.andThen(mw => env.useMiddleware(mw)),
             Effect.andThen(() => {
                 const pluginEnv = new PluginEnvironment(

@@ -11,6 +11,7 @@ import { PluginEnvironment } from "./plugin_lib/plugin_env";
 
 const side_plugin = async (env: PluginEnvironment) => {
     env.on_plugin_request((mp: MessagePartner) => {
+        console.log("INITIATED B");
         mp.on_bridge((bridge: Bridge) => {
             console.log("HERE IS MY BRIDGE");
             bridge.on((data) => {
@@ -25,9 +26,8 @@ const side_plugin = async (env: PluginEnvironment) => {
 }
 
 const main_plugin = async (env: PluginEnvironment) => {
-    console.log("Get plugin");
     const res_1 = await env.get_plugin("side", "some data");
-    console.log("FOR ALL ITS WORTH");
+    console.log("INITIATED A");
     if (res_1.is_error) {
         throw res_1.error;
     }
