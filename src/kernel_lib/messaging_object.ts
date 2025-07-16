@@ -13,14 +13,6 @@ export abstract class KernelMessagingObject extends EnvironmentCommunicator {
         readonly env: Environment = KernelEnv
     ) {
         super(env);
-        Effect.gen(this, function* () {
-            const protocol = this.get_protocol();
-            const mw = yield* protocol.middleware(this.env);
-            yield* env.useMiddleware(mw);
-        }).pipe(
-            Effect.ignore, // Assuming environment is active
-            Effect.runSync
-        );
     }
 
     _receive_command(command: string, data: Json, handler: EnvironmentCommunicationHandler): Effect.Effect<void, ProtocolError> {

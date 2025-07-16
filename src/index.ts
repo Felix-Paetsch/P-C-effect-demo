@@ -52,7 +52,7 @@ function LocalPluginEnv(address: string) {
 function runLocalPlugin(plugin: (env: PluginEnvironment) => Promise<void>, address: LocalAddress) {
     return LocalPluginEnv(address.secondary_id).pipe(
         Effect.andThen(env => {
-            return PluginEnvironment.build(env, kernel_address, address.secondary_id)
+            return new PluginEnvironment(env, kernel_address, address.secondary_id)
         }),
         Effect.andThen(env => {
             return callbackAsEffect(plugin)(env)

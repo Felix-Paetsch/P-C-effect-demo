@@ -19,10 +19,12 @@ export const EnvironmentMessageDataSchema = Schema.Struct({
 export type EnvironmentMessageData = Schema.Schema.Type<typeof EnvironmentMessageDataSchema>;
 
 export class EnvironmentCommunicationHandler extends ProtocolCommunicationHandler {
+    private _data: EnvironmentMessageData;
     constructor(
         protected im: EnvironmentMessage,
     ) {
         super(im);
+        this._data = im.data;
     }
 
     respond(data: Json, timeout?: number) {
@@ -33,7 +35,7 @@ export class EnvironmentCommunicationHandler extends ProtocolCommunicationHandle
         }), timeout).pipe(
             Effect.map(pmE => pmE.pipe(
                 Effect.andThen(pm => Effect.gen(this, function* () {
-                    yield* Schema.decodeUnknown(EnvironmentMessageDataSchema)(pm.data);
+                    this._data = yield* Schema.decodeUnknown(EnvironmentMessageDataSchema)(pm.data);
                     this.__current_pm = pm;
                     return pm;
                 }).pipe(
@@ -49,7 +51,7 @@ export class EnvironmentCommunicationHandler extends ProtocolCommunicationHandle
     }
 
     get data(): EnvironmentMessageData {
-        return (this.__current_pm as any).data;
+        return this._data;
     }
 
     get command(): string {

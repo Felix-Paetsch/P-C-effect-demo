@@ -16,8 +16,7 @@ export interface EnvironmentCommand {
 
 export class EnvironmentCommunicationProtocol extends Protocol<Effect.Effect<EnvironmentCommunicationHandler, ProtocolErrorN>, EnvironmentCommand> {
     constructor(
-        private communicator?: EnvironmentCommunicator,
-        private callback?: (cmd: EnvironmentCommand) => Effect.Effect<void, ProtocolError>
+        private communicator: EnvironmentCommunicator
     ) {
         super("environment_communication", "main", "1.0.0");
     }
@@ -70,28 +69,6 @@ export class EnvironmentCommunicationProtocol extends Protocol<Effect.Effect<Env
     }
 
     on_callback = (cmd: EnvironmentCommand): Effect.Effect<void, ProtocolError> => {
-        // If a callback is provided, use it
-        if (this.callback) {
-            return this.callback(cmd);
-        }
-
-        // Otherwise, use the communicator's _receive_command method
-        if (this.communicator) {
-            return this.communicator._receive_command(cmd.command, cmd.data, cmd.handler);
-        }
-
-        return Effect.fail(new ProtocolErrorN({
-            message: "No callback or communicator provided for environment communication"
-        }));
-    }
-}
-
-export function createEnvironmentCommunicationProtocol(
-    communicatorOrCallback: EnvironmentCommunicator | ((cmd: EnvironmentCommand) => Effect.Effect<void, ProtocolError>)
-): EnvironmentCommunicationProtocol {
-    if (communicatorOrCallback instanceof EnvironmentCommunicator) {
-        return new EnvironmentCommunicationProtocol(communicatorOrCallback);
-    } else {
-        return new EnvironmentCommunicationProtocol(undefined, communicatorOrCallback);
+        return this.communicator._receive_command(cmd.command, cmd.data, cmd.handler);
     }
 }

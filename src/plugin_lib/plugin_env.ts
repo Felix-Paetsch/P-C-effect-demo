@@ -1,7 +1,7 @@
 import { Effect, Schema } from "effect";
 import { v4 as uuidv4 } from "uuid";
 import { Address } from "../../messaging/src/base/address";
-import { Environment, EnvironmentInactiveError, EnvironmentT } from "../../messaging/src/base/environment";
+import { Environment, EnvironmentT } from "../../messaging/src/base/environment";
 import { ProtocolError, ProtocolErrorN } from "../../messaging/src/protocols/base/protocol_errors";
 import { Json } from "../../messaging/src/utils/json";
 import { callbackAsEffect, CallbackError, ResultPromise, runEffectAsPromise } from "../../messaging/src/utils/run";
@@ -85,23 +85,6 @@ export class PluginEnvironment extends EnvironmentCommunicator {
                     data: { command, data }
                 }));
             }
-        });
-    }
-
-    static build(
-        env: Environment,
-        kernel_address: Address,
-        instance_uuid: string
-    ): Effect.Effect<PluginEnvironment, EnvironmentInactiveError, never> {
-        return Effect.gen(function* () {
-            const pluginEnv = new PluginEnvironment(env, kernel_address, instance_uuid);
-
-            // Set up the protocol middleware
-            const protocol = pluginEnv.get_protocol();
-            const mw = yield* protocol.middleware(env);
-            yield* env.useMiddleware(mw);
-
-            return pluginEnv;
         });
     }
 }
