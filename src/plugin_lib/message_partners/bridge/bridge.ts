@@ -2,12 +2,12 @@ import { Effect } from "effect";
 import { ProtocolError } from "../../../../messaging/src/protocols/base/protocol_errors";
 import { Json } from "../../../../messaging/src/utils/json";
 import { callbackAsEffect, CallbackError, Result, runEffectAsPromise, runEffectAsPromiseFlash } from "../../../../messaging/src/utils/run";
-import { InternalCommunicationHandler } from "../internal_communication/internalCommunicationHandler";
 import { MessagePartnerObject } from "../message_partner_object";
+import { MPOCommunicationHandler } from "../mpo_communication/MPOCommunicationHandler";
 
 export class Bridge extends MessagePartnerObject {
     send(data: Json): Promise<Result<null, ProtocolError>> {
-        return this._send_first_internal_message("send_bridge", data).pipe(
+        return this._send_first_mpo_message("send_bridge", data).pipe(
             Effect.as(null),
             runEffectAsPromiseFlash
         );
@@ -30,14 +30,14 @@ export class Bridge extends MessagePartnerObject {
 
 Bridge.add_command({
     command: "send_bridge",
-    on_first_request: (mp: Bridge, im: InternalCommunicationHandler, data: Json) => {
+    on_first_request: (mp: Bridge, im: MPOCommunicationHandler, data: Json) => {
         return mp.__on_message_cb(data).pipe(Effect.ignore);
     }
 });
 
 Bridge.add_command({
     command: "on_new_listener",
-    on_first_request: (mp: Bridge, im: InternalCommunicationHandler, data: Json) => {
+    on_first_request: (mp: Bridge, im: MPOCommunicationHandler, data: Json) => {
         return mp.__on_listener_registered().pipe(Effect.ignore);
     }
 });

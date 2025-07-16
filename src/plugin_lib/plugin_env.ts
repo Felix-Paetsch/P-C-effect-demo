@@ -47,9 +47,6 @@ export class PluginEnvironment {
                 Effect.mapError(e => new ProtocolErrorN({
                     message: "Failed to get plugin",
                     error: e instanceof Error ? e : new Error(String(e))
-                })),
-                Effect.tapError((e) => Effect.gen(this, function* () {
-                    console.log("ERROR", e)
                 }))
             )
         );

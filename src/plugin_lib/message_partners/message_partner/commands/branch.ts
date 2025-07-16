@@ -1,7 +1,7 @@
 import { Effect } from "effect";
 import { ProtocolError } from "../../../../../messaging/src/protocols/base/protocol_errors";
 import { Json } from "../../../../../messaging/src/utils/json";
-import { InternalCommunicationHandler } from "../../internal_communication/internalCommunicationHandler";
+import { MPOCommunicationHandler } from "../../mpo_communication/MPOCommunicationHandler";
 import { createMpo, receiveMpo } from "../create_mpo";
 import { MessagePartner } from "../message_partner";
 
@@ -34,7 +34,7 @@ export default function (MPC: typeof MessagePartner) {
 
     MPC.add_command({
         command: cmd,
-        on_first_request: (mp: MessagePartner, im: InternalCommunicationHandler, data: Json) => {
+        on_first_request: (mp: MessagePartner, im: MPOCommunicationHandler, data: Json) => {
             return receiveMpo<MessagePartner>(mp, im, MessagePartnerFactory, (mpo) => {
                 mp.__branch_cb(mpo, data);
             })

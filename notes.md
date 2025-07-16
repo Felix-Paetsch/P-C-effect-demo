@@ -26,6 +26,8 @@ Assert it is something / How do we deal with that we now always have error retur
 
 -   Move message chains to protocol, as we need them also for ...
 
+Snake/Camel Casing
+
 Built in JSON schema serializer in effect ts
 
 // Effect.try

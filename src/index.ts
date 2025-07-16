@@ -5,16 +5,13 @@ import { Json } from "../messaging/src/utils/json";
 import { callbackAsEffect, Result } from "../messaging/src/utils/run";
 import { KernelMessagingObject } from "./kernel_lib/messaging_object";
 import { Bridge } from "./plugin_lib/message_partners/bridge/bridge";
-import { InternalCommunication } from "./plugin_lib/message_partners/internal_communication/protocol";
 import { MessagePartner } from "./plugin_lib/message_partners/message_partner/message_partner";
+import { MPOCommunication } from "./plugin_lib/message_partners/mpo_communication/protocol";
 import { PluginEnvironment } from "./plugin_lib/plugin_env";
 
 const side_plugin = async (env: PluginEnvironment) => {
-    console.log("Start with B");
     env.on_plugin_request((mp: MessagePartner) => {
-        console.log("Listen on B");
         mp.on_bridge((bridge: Bridge) => {
-            console.log("HERE IS MY BRIDGE");
             bridge.on((data) => {
                 console.log(data + ", and I must scream SIDE");
             });
@@ -26,16 +23,13 @@ const side_plugin = async (env: PluginEnvironment) => {
 }
 
 const main_plugin = async (env: PluginEnvironment) => {
-    console.log("Start with A");
     const res_1 = await env.get_plugin("side", "some data");
-    console.log("Continue with A");
     if (res_1.is_error) {
         throw res_1.error;
     }
     const mp = res_1.result;
 
     const res_2 = await mp.bridge();
-    console.log(res_2);
     if (res_2.is_error) {
         throw res_2.error;
     }
@@ -49,7 +43,7 @@ const main_plugin = async (env: PluginEnvironment) => {
 function LocalPluginEnv(address: string) {
     return Effect.gen(function* () {
         const env = yield* createLocalEnvironment(new LocalAddress(address));
-        const mw = yield* InternalCommunication.middleware(env);
+        const mw = yield* MPOCommunication.middleware(env);
         yield* env.useMiddleware(mw);
         return env;
     })

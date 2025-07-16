@@ -2,11 +2,11 @@ import { Context, Data, Effect, Option, ParseResult, pipe, Schema } from "effect
 import { EnvironmentT } from "../../../messaging/src/base/environment";
 import { ProtocolError, ProtocolErrorR } from "../../../messaging/src/protocols/base/protocol_errors";
 import { Json } from "../../../messaging/src/utils/json";
-import { InternalCommunicationHandler } from "./internal_communication/internalCommunicationHandler";
-import { InternalCommunication } from "./internal_communication/protocol";
 import { MessagePartner } from "./message_partner/message_partner";
 import applyPingPrototypeModifier from "./mpo_commands/ping";
 import applyRemovePrototypeModifier from "./mpo_commands/remove";
+import { MPOCommunicationHandler } from "./mpo_communication/MPOCommunicationHandler";
+import { MPOCommunication } from "./mpo_communication/protocol";
 
 export class MPOInitializationError extends Data.TaggedError("MPOInitializationError")<{
     message_partner_uuid: string;
@@ -25,7 +25,7 @@ export class MessagePartnerObject {
     private static classCommands = new Map<Function, {
         [key: string]: {
             command: string;
-            on_first_request: (mpo: any, im: InternalCommunicationHandler, data: Json) => Effect.Effect<void, ProtocolError>;
+            on_first_request: (mpo: any, im: MPOCommunicationHandler, data: Json) => Effect.Effect<void, ProtocolError>;
         }
     }>();
 
@@ -50,22 +50,22 @@ export class MessagePartnerObject {
     }
 
     _send_command(command: string, data?: Json, timeout?: number): Effect.Effect<
-        Effect.Effect<InternalCommunicationHandler, ProtocolError>,
+        Effect.Effect<MPOCommunicationHandler, ProtocolError>,
         ProtocolError
     > {
-        return this._send_first_internal_message(command, data, timeout)
+        return this._send_first_mpo_message(command, data, timeout)
     }
 
-    _send_first_internal_message(protocol: string, data?: Json, timeout?: number): Effect.Effect<
-        Effect.Effect<InternalCommunicationHandler, ProtocolError>,
+    _send_first_mpo_message(protocol: string, data?: Json, timeout?: number): Effect.Effect<
+        Effect.Effect<MPOCommunicationHandler, ProtocolError>,
         ProtocolError
     > {
-        return InternalCommunication.run_mpo(this, protocol, data, timeout).pipe(
+        return MPOCommunication.run_mpo(this, protocol, data, timeout).pipe(
             Effect.provideService(EnvironmentT, this.message_partner.env)
         );
     }
 
-    _recieve_internal_message(protocol_name: string, data: Json, ich: InternalCommunicationHandler): Effect.Effect<void, ProtocolError> {
+    _recieve_mpo_message(protocol_name: string, data: Json, ich: MPOCommunicationHandler): Effect.Effect<void, ProtocolError> {
         const command = (this.constructor as typeof MessagePartnerObject).get_command(protocol_name);
         if (command) {
             return command.on_first_request(this, ich, data);
@@ -138,7 +138,7 @@ export class MessagePartnerObject {
 
     static add_command<T extends MessagePartnerObject = MessagePartnerObject>(command: {
         command: string;
-        on_first_request: (mpo: T, im: InternalCommunicationHandler, data: Json) => Effect.Effect<void, ProtocolError>;
+        on_first_request: (mpo: T, im: MPOCommunicationHandler, data: Json) => Effect.Effect<void, ProtocolError>;
     }): void {
         MessagePartnerObject._initializeClassCommands(this);
         const classCommandMap = MessagePartnerObject.classCommands.get(this)!;
@@ -147,7 +147,7 @@ export class MessagePartnerObject {
 
     static get_command(commandName: string): {
         command: string;
-        on_first_request: (mpo: any, im: InternalCommunicationHandler, data: Json) => Effect.Effect<void, ProtocolError>;
+        on_first_request: (mpo: any, im: MPOCommunicationHandler, data: Json) => Effect.Effect<void, ProtocolError>;
     } | undefined {
         let currentClass: Function = this;
         while (currentClass && currentClass !== Function.prototype) {

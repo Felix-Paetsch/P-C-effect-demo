@@ -24,7 +24,6 @@ export class MessagePartner extends MessagePartnerObject {
         readonly env: Environment,
         uuid: string = uuidv4()
     ) {
-        console.log(address);
         super(null as any, uuid);
         (this.message_partner as any) = this;
         MessagePartner.message_partners.push(this);

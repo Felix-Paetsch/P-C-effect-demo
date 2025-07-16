@@ -5,45 +5,45 @@ import { fail_as_protocol_error, ProtocolError, ProtocolErrorN } from "../../../
 import { Protocol } from "../../../../messaging/src/protocols/protocol";
 import { Json } from "../../../../messaging/src/utils/json";
 import { MessagePartnerObject } from "../message_partner_object";
-import { InternalCommunicationHandler, InternalMessageProtocolDataSchema } from "./internalCommunicationHandler";
+import { MPOCommunicationHandler, MPOMessageProtocolDataSchema } from "./MPOCommunicationHandler";
 import { get_message_partner_object } from "./tools";
 
 
 
-export class InternalCommunicationProtocol extends Protocol<Effect.Effect<InternalCommunicationHandler, ProtocolErrorN>, InternalCommunicationHandler> {
+export class MPOCommunicationProtocol extends Protocol<Effect.Effect<MPOCommunicationHandler, ProtocolErrorN>, MPOCommunicationHandler> {
     constructor() {
         super("message_partner_object_communication", "main", "1.0.0");
     }
 
-    run(): Effect.Effect<Effect.Effect<InternalCommunicationHandler, ProtocolErrorN>, ProtocolError> {
+    run(): Effect.Effect<Effect.Effect<MPOCommunicationHandler, ProtocolErrorN>, ProtocolError> {
         return Effect.fail(new ProtocolErrorN({
-            message: "Use run_mpo method instead for internal communication"
+            message: "Use run_mpo method instead for MPO communication"
         }));
     }
 
     run_mpo(
         mpo: MessagePartnerObject,
-        internal_message_protocol_name: string,
+        mpo_message_protocol_name: string,
         data?: Json,
         timeout?: number
     ): Effect.Effect<
-        Effect.Effect<InternalCommunicationHandler, ProtocolErrorN>,
+        Effect.Effect<MPOCommunicationHandler, ProtocolErrorN>,
         ProtocolErrorN,
         EnvironmentT
     > {
         return Effect.gen(this, function* () {
             const handlerE = yield* this.send_first_message(
                 mpo.message_partner.address,
-                Schema.encodeSync(InternalMessageProtocolDataSchema)({
+                Schema.encodeSync(MPOMessageProtocolDataSchema)({
                     mpo_ident: mpo.ident,
-                    internal_message_protocol_name,
+                    mpo_message_protocol_name,
                     protocol_data: data
                 }), timeout
             )
 
             const env = yield* EnvironmentT;
             return handlerE.pipe(
-                Effect.andThen(handler => InternalCommunicationHandler.fromInternalMessage(handler.__current_pm)),
+                Effect.andThen(handler => MPOCommunicationHandler.fromMPOMessage(handler.__current_pm)),
                 Effect.provideService(EnvironmentT, env)
             )
         }).pipe(fail_as_protocol_error)
@@ -52,20 +52,20 @@ export class InternalCommunicationProtocol extends Protocol<Effect.Effect<Intern
     get on_first_request(): Effect.Effect<void, ProtocolError, ProtocolCommunicationHandlerT> {
         return pipe(
             ProtocolCommunicationHandlerT,
-            Effect.andThen(pch => InternalCommunicationHandler.fromInternalMessage(pch.__current_pm)),
+            Effect.andThen(pch => MPOCommunicationHandler.fromMPOMessage(pch.__current_pm)),
             Effect.andThen(ich => this.on_callback(ich))
         );
     }
 
-    on_callback = (ch: InternalCommunicationHandler): Effect.Effect<void, never, never> => {
+    on_callback = (ch: MPOCommunicationHandler): Effect.Effect<void, never, never> => {
         return Effect.gen(function* () {
             const data = ch.data;
             const mpo = yield* get_message_partner_object(data.mpo_ident).pipe(
                 Effect.provideService(ProtocolCommunicationHandlerT, ch)
             );
 
-            yield* mpo._recieve_internal_message(
-                data.internal_message_protocol_name,
+            yield* mpo._recieve_mpo_message(
+                data.mpo_message_protocol_name,
                 data.protocol_data,
                 ch
             );
@@ -73,4 +73,4 @@ export class InternalCommunicationProtocol extends Protocol<Effect.Effect<Intern
     }
 }
 
-export const InternalCommunication = new InternalCommunicationProtocol();
+export const MPOCommunication = new MPOCommunicationProtocol();

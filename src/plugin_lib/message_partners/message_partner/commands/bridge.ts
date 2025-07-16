@@ -2,7 +2,7 @@ import { ProtocolError } from "../../../../../messaging/src/protocols/base/proto
 import { Json } from "../../../../../messaging/src/utils/json";
 import { EffectAsPromise, ResultPromise } from "../../../../../messaging/src/utils/run";
 import { Bridge } from "../../bridge/bridge";
-import { InternalCommunicationHandler } from "../../internal_communication/internalCommunicationHandler";
+import { MPOCommunicationHandler } from "../../mpo_communication/MPOCommunicationHandler";
 import { createMpo, receiveMpo } from "../create_mpo";
 import { MessagePartner } from "../message_partner";
 
@@ -36,7 +36,7 @@ export default function (MPC: typeof MessagePartner) {
 
     MPC.add_command({
         command: cmd,
-        on_first_request: (mp: MessagePartner, im: InternalCommunicationHandler, data: Json) => {
+        on_first_request: (mp: MessagePartner, im: MPOCommunicationHandler, data: Json) => {
             return receiveMpo<Bridge>(mp, im, Bridge, (mpo) => {
                 mp.__bridge_cb(mpo, data);
             })

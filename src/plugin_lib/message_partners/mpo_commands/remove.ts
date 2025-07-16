@@ -1,8 +1,8 @@
 import { Effect } from "effect";
 import { fail_as_protocol_error } from "../../../../messaging/src/protocols/base/protocol_errors";
 import { Json } from "../../../../messaging/src/utils/json";
-import { InternalCommunicationHandler } from "../internal_communication/internalCommunicationHandler";
 import { MessagePartnerObject } from "../message_partner_object";
+import { MPOCommunicationHandler } from "../mpo_communication/MPOCommunicationHandler";
 
 declare module "../message_partner_object" {
     interface MessagePartnerObject {
@@ -13,7 +13,7 @@ declare module "../message_partner_object" {
 export default function (MPC: typeof MessagePartnerObject) {
     MPC.add_command({
         command: "remove_mpo",
-        on_first_request: (mp: MessagePartnerObject, ich: InternalCommunicationHandler, data: Json) => {
+        on_first_request: (mp: MessagePartnerObject, ich: MPOCommunicationHandler, data: Json) => {
             return Effect.gen(mp, function* () {
                 this.removed = true;
                 return yield* ich.respond("OK");
@@ -26,7 +26,7 @@ export default function (MPC: typeof MessagePartnerObject) {
     MPC.prototype.remove = function (): Effect.Effect<void, never, never> {
         return Effect.gen(this, function* () {
             this.removed = true;
-            return yield* this._send_first_internal_message("remove_mpo").pipe(Effect.ignore);
+            return yield* this._send_first_mpo_message("remove_mpo").pipe(Effect.ignore);
         })
     }
 }

@@ -2,8 +2,8 @@ import { Effect } from "effect";
 import { v4 as uuidv4 } from 'uuid';
 import { fail_as_protocol_error, ProtocolError } from "../../../../messaging/src/protocols/base/protocol_errors";
 import { Json } from "../../../../messaging/src/utils/json";
-import { InternalCommunicationHandler } from "../internal_communication/internalCommunicationHandler";
 import { MessagePartnerObject } from "../message_partner_object";
+import { MPOCommunicationHandler } from "../mpo_communication/MPOCommunicationHandler";
 import { MessagePartner } from "./message_partner";
 
 export function createMpo<T extends MessagePartnerObject>(
@@ -41,7 +41,7 @@ export function createMpo<T extends MessagePartnerObject>(
 
 export function receiveMpo<T extends MessagePartnerObject>(
     messagePartner: MessagePartner,
-    im: InternalCommunicationHandler,
+    im: MPOCommunicationHandler,
     receiverClass: { new(mpo: MessagePartner, uuid: string): T },
     cb: (mpo: T) => void
 ): Effect.Effect<void, ProtocolError> {
