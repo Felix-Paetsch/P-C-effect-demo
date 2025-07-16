@@ -10,15 +10,15 @@ import { MessagePartner } from "./plugin_lib/message_partners/message_partner/me
 import { PluginEnvironment } from "./plugin_lib/plugin_env";
 
 const side_plugin = async (env: PluginEnvironment) => {
+    console.log("Start with B");
     env.on_plugin_request((mp: MessagePartner) => {
-        console.log("INITIATED B");
+        console.log("Listen on B");
         mp.on_bridge((bridge: Bridge) => {
             console.log("HERE IS MY BRIDGE");
             bridge.on((data) => {
-                console.log(data + ", and I must scream");
+                console.log(data + ", and I must scream SIDE");
             });
             bridge.on_listener_registered(async (bridge) => {
-                console.log("REGISTERED");
                 await bridge.send("Here I am");
             });
         })
@@ -26,8 +26,9 @@ const side_plugin = async (env: PluginEnvironment) => {
 }
 
 const main_plugin = async (env: PluginEnvironment) => {
+    console.log("Start with A");
     const res_1 = await env.get_plugin("side", "some data");
-    console.log("INITIATED A");
+    console.log("Continue with A");
     if (res_1.is_error) {
         throw res_1.error;
     }
@@ -41,7 +42,7 @@ const main_plugin = async (env: PluginEnvironment) => {
     const bridge = res_2.result;
     await bridge.send("I have no mouth");
     bridge.on((data) => {
-        console.log(data + ", and I must still scream");
+        console.log(data + ", and I must still scream MAIN");
     });
 }
 

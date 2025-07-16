@@ -42,7 +42,6 @@ export class PluginEnvironment {
                 );
 
                 const messagePartner = new MessagePartner(pluginAddress, this.env, uuid);
-                console.log("MP SEND");
                 return messagePartner;
             }).pipe(
                 Effect.mapError(e => new ProtocolErrorN({
@@ -70,8 +69,7 @@ export class PluginEnvironment {
             if (command === "get_plugin") {
                 const requestData = data as { uuid?: string } | null;
                 const uuid = requestData?.uuid;
-                const message_partner = new MessagePartner(handler.message.target, this.env, uuid);
-                console.log("MP RECIEVE");
+                const message_partner = new MessagePartner(handler.communication_target, this.env, uuid);
                 yield* this._on_plugin_request(message_partner, data).pipe(
                     Effect.mapError(e => handler.asErrorR(e))
                 );

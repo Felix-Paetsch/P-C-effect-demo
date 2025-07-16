@@ -1,10 +1,10 @@
-import { Context, Option, Effect, Schema, ParseResult, pipe } from "effect";
-import { Address } from "../../../../messaging/src/base/address";
+import { Context, Effect, Option, ParseResult, pipe, Schema } from "effect";
 import { v4 as uuidv4 } from "uuid";
-import { MessagePartnerObject, MPOInitializationError } from "../message_partner_object";
+import { Address } from "../../../../messaging/src/base/address";
 import { Environment, EnvironmentT } from "../../../../messaging/src/base/environment";
-import applySignalPrototypeModifier from "./commands/signal";
+import { MessagePartnerObject, MPOInitializationError } from "../message_partner_object";
 import applyBridgePrototypeModifier from "./commands/bridge";
+import applySignalPrototypeModifier from "./commands/signal";
 
 export class MessagePartner extends MessagePartnerObject {
     static message_partners: MessagePartner[] = [];
@@ -24,6 +24,7 @@ export class MessagePartner extends MessagePartnerObject {
         readonly env: Environment,
         uuid: string = uuidv4()
     ) {
+        console.log(address);
         super(null as any, uuid);
         (this.message_partner as any) = this;
         MessagePartner.message_partners.push(this);
