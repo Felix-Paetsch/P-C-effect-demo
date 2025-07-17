@@ -7,11 +7,15 @@ import { runEffectAsPromise } from "../../../messaging/src/utils/run";
 import { EnvironmentCommunicationHandler } from "./EnvironmentCommunicationHandler";
 import { EnvironmentCommunicationProtocol } from "./protocol";
 
+type CommandPrefix = "BOTH" | "KERNEL" | "PLUGIN";
+type Command = `${CommandPrefix}::${string}`;
+
 export abstract class EnvironmentCommunicator {
+    protected command_prefix: CommandPrefix;
     private static classCommands = new Map<Function, {
-        [key: string]: {
-            command: string;
-            on_command: (communicator: any, handler: EnvironmentCommunicationHandler, data: Json) => Effect.Effect<void, ProtocolError>;
+        [key: Command]: {
+            command: Command;
+            on_command: (communicator: any, handler: EnvironmentCommunicationHandler, data: Json) => Effect.Effect<void, ProtocolError, never>;
         }
     }>();
 
@@ -25,9 +29,10 @@ export abstract class EnvironmentCommunicator {
             Effect.andThen(mw => env.useMiddleware(mw)),
             runEffectAsPromise
         );
+        this.command_prefix = "BOTH";
     }
 
-    protected _send_command(
+    _send_command(
         target_address: Address,
         command: string,
         data?: Json,
@@ -37,7 +42,7 @@ export abstract class EnvironmentCommunicator {
         ProtocolErrorN,
         EnvironmentT
     > {
-        return this.protocol.run_command(target_address, command, data, timeout);
+        return this.protocol.run_command(target_address, this.command_prefix + "::" + command, data, timeout);
     }
 
     _receive_command(
@@ -62,24 +67,59 @@ export abstract class EnvironmentCommunicator {
         }
     }
 
-    static add_command<T extends EnvironmentCommunicator = EnvironmentCommunicator>(command: {
+    private static add_command<T extends EnvironmentCommunicator = EnvironmentCommunicator>(command: {
         command: string;
         on_command: (communicator: T, handler: EnvironmentCommunicationHandler, data: Json) => Effect.Effect<void, ProtocolError>;
     }): void {
         EnvironmentCommunicator._initializeClassCommands(this);
         const classCommandMap = EnvironmentCommunicator.classCommands.get(this)!;
-        classCommandMap[command.command] = command;
+        if (!command.command.startsWith("PLUGIN::") && !command.command.startsWith("KERNEL::")) {
+            command.command = "BOTH::" + command.command;
+        }
+        const cmd = command.command as any;
+        classCommandMap[cmd] = command as any;
     }
 
-    static get_command(commandName: string): {
+    static add_kernel_command<T extends EnvironmentCommunicator = EnvironmentCommunicator>(command: {
         command: string;
+        on_command: (communicator: T, handler: EnvironmentCommunicationHandler, data: Json) => Effect.Effect<void, ProtocolError>;
+    }) {
+        return this.add_command({
+            command: "KERNEL::" + command.command,
+            on_command: command.on_command
+        });
+    }
+
+    static add_plugin_command<T extends EnvironmentCommunicator = EnvironmentCommunicator>(command: {
+        command: string;
+        on_command: (communicator: T, handler: EnvironmentCommunicationHandler, data: Json) => Effect.Effect<void, ProtocolError>;
+    }) {
+        return this.add_command({
+            command: "PLUGIN::" + command.command,
+            on_command: command.on_command
+        });
+    }
+
+    static get_command(prefixCommand: string): {
+        command: Command;
         on_command: (communicator: EnvironmentCommunicator, handler: EnvironmentCommunicationHandler, data: Json) => Effect.Effect<void, ProtocolError>;
     } | undefined {
+        const cmd = prefixCommand as Command;
         let currentClass: Function = this;
         while (currentClass && currentClass !== Function.prototype) {
             const classCommandMap = EnvironmentCommunicator.classCommands.get(currentClass);
-            if (classCommandMap && classCommandMap[commandName]) {
-                return classCommandMap[commandName];
+            if (classCommandMap) {
+                if (classCommandMap[cmd]) {
+                    return classCommandMap[cmd];
+                }
+
+                if (cmd.startsWith("PLUGIN::") || cmd.startsWith("KERNEL::")) {
+                    const commandPart = cmd.split("::", 2)[1];
+                    const bothCommand = `BOTH::${commandPart}`;
+                    if (classCommandMap[bothCommand as any]) {
+                        return classCommandMap[bothCommand as any];
+                    }
+                }
             }
             currentClass = Object.getPrototypeOf(currentClass);
         }

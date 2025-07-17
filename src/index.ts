@@ -3,11 +3,11 @@ import { Address, LocalAddress } from "../messaging/src/base/address";
 import { createLocalEnvironment } from "../messaging/src/base/environment";
 import { Json } from "../messaging/src/utils/json";
 import { callbackAsEffect, Result } from "../messaging/src/utils/run";
-import { KernelEnvironment } from "./kernel_lib/kernel_env";
+import { KernelEnvironment } from "./kernel_lib/kernel_env/kernel_env";
 import { MPOCommunication } from "./plugin_lib/message_partners/base/mpo_commands/mpo_communication/protocol";
 import { Bridge } from "./plugin_lib/message_partners/bridge/bridge";
 import { MessagePartner } from "./plugin_lib/message_partners/message_partner/message_partner";
-import { PluginEnvironment } from "./plugin_lib/plugin_env";
+import { PluginEnvironment } from "./plugin_lib/plugin_env/plugin_env";
 
 const side_plugin = async (env: PluginEnvironment) => {
     env.on_plugin_request((mp: MessagePartner) => {

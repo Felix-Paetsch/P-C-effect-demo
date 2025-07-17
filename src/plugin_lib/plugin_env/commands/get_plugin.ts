@@ -1,24 +1,24 @@
 import { Effect, Schema } from "effect";
 import { v4 as uuidv4 } from "uuid";
-import { Address } from "../../messaging/src/base/address";
-import { Environment, EnvironmentT } from "../../messaging/src/base/environment";
-import { ProtocolError, ProtocolErrorN } from "../../messaging/src/protocols/base/protocol_errors";
-import { Json } from "../../messaging/src/utils/json";
-import { callbackAsEffect, CallbackError, ResultPromise, runEffectAsPromise } from "../../messaging/src/utils/run";
-import { EnvironmentCommunicationHandler } from "../common_lib/env_communication/EnvironmentCommunicationHandler";
-import { EnvironmentCommunicator } from "../common_lib/env_communication/environment_communicator";
-import { MessagePartner } from "./message_partners/message_partner/message_partner";
+import { Address } from "../../../../messaging/src/base/address";
+import { EnvironmentT } from "../../../../messaging/src/base/environment";
+import { ProtocolError, ProtocolErrorN } from "../../../../messaging/src/protocols/base/protocol_errors";
+import { Json } from "../../../../messaging/src/utils/json";
+import { callbackAsEffect, CallbackError, ResultPromise, runEffectAsPromise } from "../../../../messaging/src/utils/run";
+import { EnvironmentCommunicationHandler } from "../../../common_lib/env_communication/EnvironmentCommunicationHandler";
+import { MessagePartner } from "../../message_partners/message_partner/message_partner";
+import { PluginEnvironment } from "../plugin_env";
 
-export class PluginEnvironment extends EnvironmentCommunicator {
-    constructor(
-        readonly env: Environment,
-        readonly kernel_address: Address,
-        readonly instance_uuid: string, // UUID of the plugin instance
-    ) {
-        super(env);
+declare module "../plugin_env" {
+    interface PluginEnvironment {
+        get_plugin(plugin_ident: Json, data?: Json): ResultPromise<MessagePartner, ProtocolError>
+        on_plugin_request(cb: (mp: MessagePartner, data?: Json) => void): void,
+        _on_plugin_request: (mp: MessagePartner, data?: Json) => Effect.Effect<void, CallbackError>
     }
+}
 
-    get_plugin(plugin_ident: Json, data?: Json): ResultPromise<MessagePartner, ProtocolError> {
+export default function (PEC: typeof PluginEnvironment) {
+    PEC.prototype.get_plugin = function (plugin_ident: Json, data?: Json): ResultPromise<MessagePartner, ProtocolError> {
         return runEffectAsPromise(
             Effect.gen(this, function* () {
                 const handlerE = yield* this._send_command(
@@ -56,14 +56,17 @@ export class PluginEnvironment extends EnvironmentCommunicator {
         );
     }
 
-    private _on_plugin_request: (mp: MessagePartner, data?: Json) => Effect.Effect<void, CallbackError> = () => Effect.void;
-    on_plugin_request(cb: (mp: MessagePartner, data?: Json) => void) {
+    PEC.prototype._on_plugin_request = function (mp: MessagePartner, data?: Json): Effect.Effect<void, CallbackError> {
+        return Effect.void;
+    }
+    PEC.prototype.on_plugin_request = function (cb: (mp: MessagePartner, data?: Json) => void) {
         this._on_plugin_request = callbackAsEffect(cb);
     }
 
-    _receive_command(command: string, data: Json, handler: EnvironmentCommunicationHandler): Effect.Effect<void, ProtocolError> {
-        return Effect.gen(this, function* () {
-            if (command === "get_plugin") {
+    PEC.add_plugin_command({
+        command: "get_plugin",
+        on_command: (communicator: PluginEnvironment, handler: EnvironmentCommunicationHandler, data: Json) => {
+            return Effect.gen(communicator, function* () {
                 const requestData = data as { uuid?: string } | null;
                 const uuid = requestData?.uuid;
                 const message_partner = new MessagePartner(handler.communication_target, this.env, uuid);
@@ -79,12 +82,7 @@ export class PluginEnvironment extends EnvironmentCommunicator {
                         error: new Error(String(e))
                     }))
                 );
-            } else {
-                return yield* Effect.fail(new ProtocolErrorN({
-                    message: `Unknown command: ${command}`,
-                    data: { command, data }
-                }));
-            }
-        });
-    }
+            });
+        }
+    });
 }
