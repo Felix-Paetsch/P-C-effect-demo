@@ -1,8 +1,8 @@
 import { Effect } from "effect";
-import { fail_as_protocol_error } from "../../../../messaging/src/protocols/base/protocol_errors";
-import { Json } from "../../../../messaging/src/utils/json";
+import { fail_as_protocol_error } from "../../../../../messaging/src/protocols/base/protocol_errors";
+import { Json } from "../../../../../messaging/src/utils/json";
 import { MessagePartnerObject } from "../message_partner_object";
-import { MPOCommunicationHandler } from "../mpo_communication/MPOCommunicationHandler";
+import { MPOCommunicationHandler } from "./mpo_communication/MPOCommunicationHandler";
 
 declare module "../message_partner_object" {
     interface MessagePartnerObject {

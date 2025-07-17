@@ -1,3 +1,8 @@
+-   Dehnen
+-   Clean Up Commands (unify directories, syntax)
+-   Martin Antworten
+-   Add Command At message partner to add plugins
+
 The current plan:
 
 -   One index bridge routing is wrong

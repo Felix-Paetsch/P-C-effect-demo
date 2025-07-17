@@ -1,8 +1,8 @@
 import { Effect, Schema } from "effect";
-import { ProtocolCommunicationHandler } from "../../../../messaging/src/protocols/base/communicationHandler";
-import { ProtocolError, ProtocolErrorR } from "../../../../messaging/src/protocols/base/protocol_errors";
-import { ProtocolMessage } from "../../../../messaging/src/protocols/base/protocol_message";
-import { Json } from "../../../../messaging/src/utils/json";
+import { ProtocolCommunicationHandler } from "../../../../../../messaging/src/protocols/base/communicationHandler";
+import { ProtocolError, ProtocolErrorR } from "../../../../../../messaging/src/protocols/base/protocol_errors";
+import { ProtocolMessage } from "../../../../../../messaging/src/protocols/base/protocol_message";
+import { Json } from "../../../../../../messaging/src/utils/json";
 
 export type MPOMessage = ProtocolMessage & {
     data: MPOMessageProtocolData

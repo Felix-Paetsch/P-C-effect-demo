@@ -3,10 +3,10 @@ import { Address, LocalAddress } from "../messaging/src/base/address";
 import { createLocalEnvironment } from "../messaging/src/base/environment";
 import { Json } from "../messaging/src/utils/json";
 import { callbackAsEffect, Result } from "../messaging/src/utils/run";
-import { KernelMessagingObject } from "./kernel_lib/messaging_object";
+import { KernelEnvironment } from "./kernel_lib/kernel_env";
+import { MPOCommunication } from "./plugin_lib/message_partners/base/mpo_commands/mpo_communication/protocol";
 import { Bridge } from "./plugin_lib/message_partners/bridge/bridge";
 import { MessagePartner } from "./plugin_lib/message_partners/message_partner/message_partner";
-import { MPOCommunication } from "./plugin_lib/message_partners/mpo_communication/protocol";
 import { PluginEnvironment } from "./plugin_lib/plugin_env";
 
 const side_plugin = async (env: PluginEnvironment) => {
@@ -65,7 +65,7 @@ const kernel_address = new LocalAddress("__kernel");
 const main_address = new LocalAddress("main");
 const side_address = new LocalAddress("side");
 
-class KernelImpl extends KernelMessagingObject {
+class KernelImpl extends KernelEnvironment {
     async get_plugin(plugin_ident: Json) {
         if (plugin_ident === "side") {
             await runLocalPlugin(side_plugin, side_address);

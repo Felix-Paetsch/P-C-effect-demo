@@ -1,8 +1,8 @@
 import { ProtocolError } from "../../../../../messaging/src/protocols/base/protocol_errors";
 import { Json } from "../../../../../messaging/src/utils/json";
 import { EffectAsPromise, ResultPromise } from "../../../../../messaging/src/utils/run";
+import { MPOCommunicationHandler } from "../../base/mpo_commands/mpo_communication/MPOCommunicationHandler";
 import { Bridge } from "../../bridge/bridge";
-import { MPOCommunicationHandler } from "../../mpo_communication/MPOCommunicationHandler";
 import { createMpo, receiveMpo } from "../create_mpo";
 import { MessagePartner } from "../message_partner";
 

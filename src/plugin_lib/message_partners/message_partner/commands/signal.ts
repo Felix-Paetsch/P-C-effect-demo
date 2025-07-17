@@ -1,7 +1,7 @@
 import { Effect } from "effect";
 import { ProtocolError } from "../../../../../messaging/src/protocols/base/protocol_errors";
 import { Json } from "../../../../../messaging/src/utils/json";
-import { MPOCommunicationHandler } from "../../mpo_communication/MPOCommunicationHandler";
+import { MPOCommunicationHandler } from "../../base/mpo_commands/mpo_communication/MPOCommunicationHandler";
 import { SignalReciever } from "../../signal/reciever";
 import { SignalSender } from "../../signal/sender";
 import { createMpo, receiveMpo } from "../create_mpo";

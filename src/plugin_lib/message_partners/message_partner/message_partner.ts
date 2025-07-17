@@ -2,7 +2,7 @@ import { Context, Effect, Option, ParseResult, pipe, Schema } from "effect";
 import { v4 as uuidv4 } from "uuid";
 import { Address } from "../../../../messaging/src/base/address";
 import { Environment, EnvironmentT } from "../../../../messaging/src/base/environment";
-import { MessagePartnerObject, MPOInitializationError } from "../message_partner_object";
+import { MessagePartnerObject, MPOInitializationError } from "../base/message_partner_object";
 import applyBridgePrototypeModifier from "./commands/bridge";
 import applySignalPrototypeModifier from "./commands/signal";
 

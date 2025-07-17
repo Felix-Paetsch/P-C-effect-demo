@@ -1,12 +1,12 @@
 import { Context, Data, Effect, Option, ParseResult, pipe, Schema } from "effect";
-import { EnvironmentT } from "../../../messaging/src/base/environment";
-import { ProtocolError, ProtocolErrorR } from "../../../messaging/src/protocols/base/protocol_errors";
-import { Json } from "../../../messaging/src/utils/json";
-import { MessagePartner } from "./message_partner/message_partner";
+import { EnvironmentT } from "../../../../messaging/src/base/environment";
+import { ProtocolError, ProtocolErrorR } from "../../../../messaging/src/protocols/base/protocol_errors";
+import { Json } from "../../../../messaging/src/utils/json";
+import { MessagePartner } from "../message_partner/message_partner";
+import { MPOCommunicationHandler } from "./mpo_commands/mpo_communication/MPOCommunicationHandler";
+import { MPOCommunication } from "./mpo_commands/mpo_communication/protocol";
 import applyPingPrototypeModifier from "./mpo_commands/ping";
 import applyRemovePrototypeModifier from "./mpo_commands/remove";
-import { MPOCommunicationHandler } from "./mpo_communication/MPOCommunicationHandler";
-import { MPOCommunication } from "./mpo_communication/protocol";
 
 export class MPOInitializationError extends Data.TaggedError("MPOInitializationError")<{
     message_partner_uuid: string;

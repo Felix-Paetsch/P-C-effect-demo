@@ -2,8 +2,8 @@ import { Effect } from "effect";
 import { ProtocolError } from "../../../../messaging/src/protocols/base/protocol_errors";
 import { Json } from "../../../../messaging/src/utils/json";
 import { callbackAsEffect, CallbackError, Result, runEffectAsPromise, runEffectAsPromiseFlash } from "../../../../messaging/src/utils/run";
-import { MessagePartnerObject } from "../message_partner_object";
-import { MPOCommunicationHandler } from "../mpo_communication/MPOCommunicationHandler";
+import { MessagePartnerObject } from "../base/message_partner_object";
+import { MPOCommunicationHandler } from "../base/mpo_commands/mpo_communication/MPOCommunicationHandler";
 
 export class Bridge extends MessagePartnerObject {
     send(data: Json): Promise<Result<null, ProtocolError>> {

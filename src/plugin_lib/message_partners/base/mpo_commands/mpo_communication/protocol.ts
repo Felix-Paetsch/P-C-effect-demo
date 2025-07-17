@@ -1,10 +1,10 @@
 import { Effect, pipe, Schema } from "effect";
-import { EnvironmentT } from "../../../../messaging/src/base/environment";
-import { ProtocolCommunicationHandlerT } from "../../../../messaging/src/protocols/base/communicationHandler";
-import { fail_as_protocol_error, ProtocolError, ProtocolErrorN } from "../../../../messaging/src/protocols/base/protocol_errors";
-import { Protocol } from "../../../../messaging/src/protocols/protocol";
-import { Json } from "../../../../messaging/src/utils/json";
-import { MessagePartnerObject } from "../message_partner_object";
+import { EnvironmentT } from "../../../../../../messaging/src/base/environment";
+import { ProtocolCommunicationHandlerT } from "../../../../../../messaging/src/protocols/base/communicationHandler";
+import { fail_as_protocol_error, ProtocolError, ProtocolErrorN } from "../../../../../../messaging/src/protocols/base/protocol_errors";
+import { Protocol } from "../../../../../../messaging/src/protocols/protocol";
+import { Json } from "../../../../../../messaging/src/utils/json";
+import { MessagePartnerObject } from "../../message_partner_object";
 import { MPOCommunicationHandler, MPOMessageProtocolDataSchema } from "./MPOCommunicationHandler";
 import { get_message_partner_object } from "./tools";
 
