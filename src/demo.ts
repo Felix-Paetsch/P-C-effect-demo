@@ -1,10 +1,11 @@
 import { Effect } from "effect";
 import { Address, LocalAddress } from "../messaging/src/base/address";
 import { createLocalEnvironment } from "../messaging/src/base/environment";
+import { MessageT } from "../messaging/src/base/message";
+import { log_messages, log_to_address, recieveMessageLogs } from "../messaging/src/middleware/logging";
 import { Json } from "../messaging/src/utils/json";
 import { callbackAsEffect, Result } from "../messaging/src/utils/run";
 import { KernelEnvironment } from "./kernel_lib/kernel_env/kernel_env";
-import { MPOCommunication } from "./plugin_lib/message_partners/base/mpo_commands/mpo_communication/protocol";
 import { Bridge } from "./plugin_lib/message_partners/bridge/bridge";
 import { MessagePartner } from "./plugin_lib/message_partners/message_partner/message_partner";
 import { PluginEnvironment } from "./plugin_lib/plugin_env/plugin_env";
@@ -28,7 +29,6 @@ const main_plugin = async (env: PluginEnvironment) => {
         throw res_1.error;
     }
     const mp = res_1.result;
-
     const res_2 = await mp.bridge();
     if (res_2.is_error) {
         throw res_2.error;
@@ -40,21 +40,15 @@ const main_plugin = async (env: PluginEnvironment) => {
     });
 }
 
-function LocalPluginEnv(address: string) {
-    return Effect.gen(function* () {
-        const env = yield* createLocalEnvironment(new LocalAddress(address));
-        const mw = yield* MPOCommunication.middleware(env);
-        yield* env.useMiddleware(mw);
-        return env;
-    })
-}
-
 function runLocalPlugin(plugin: (env: PluginEnvironment) => Promise<void>, address: LocalAddress) {
-    return LocalPluginEnv(address.secondary_id).pipe(
+    return createLocalEnvironment(
+        new LocalAddress(address.secondary_id)
+    ).pipe(
         Effect.andThen(env => {
             return new PluginEnvironment(env, kernel_address, address.secondary_id)
         }),
         Effect.andThen(env => {
+            env.useMiddleware(log_messages(log_to_address(kernel_address)), "monitoring");
             return callbackAsEffect(plugin)(env)
         }),
         Effect.runPromise
@@ -67,6 +61,7 @@ const side_address = new LocalAddress("side");
 
 class KernelImpl extends KernelEnvironment {
     async get_plugin(plugin_ident: Json) {
+        console.log("GET PLUGIN", plugin_ident);
         if (plugin_ident === "side") {
             await runLocalPlugin(side_plugin, side_address);
             return {
@@ -83,6 +78,16 @@ class KernelImpl extends KernelEnvironment {
 }
 
 createLocalEnvironment(kernel_address).pipe(
+    Effect.tap(env =>
+        env.useMiddleware(recieveMessageLogs(
+            Effect.gen(function* () {
+                const message = yield* MessageT;
+                const content = yield* message.content;
+                const meta_data = message.meta_data;
+                console.log(content, meta_data);
+            }).pipe(Effect.ignore)
+        ))
+    ),
     Effect.andThen(env => new KernelImpl(env)),
     Effect.runSync
 )

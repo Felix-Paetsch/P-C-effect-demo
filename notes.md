@@ -1,14 +1,25 @@
+Todo:
+
+Question: How does infer work? What does the "out" type keyword do? (Use in/out?)
+Default middleware (and register middleware with the associated key)
+
 -   Dehnen
 -   Clean Up Commands (unify directories, syntax)
 -   Martin Antworten
 -   Add Command At message partner to add plugins
 
-The current plan:
-
--   One index bridge routing is wrong
--   CleanUPPP: Protocols, Intercommunication; unify (i guess)
+Idee:
+Plugin als Funktionen
+Plugin als Klasse??
 
 TODO:
+
+-   Signals
+-   Unify Callback structure
+-   Debug Middleware
+-   Better Kernel Support
+-   Shut Down etc.
+
 Reduce possible Errors with protocols
 Abstract from Protocols? (deabstract?)
 What is wierd about the usage:

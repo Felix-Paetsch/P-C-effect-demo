@@ -12,6 +12,7 @@ export abstract class KernelEnvironment extends EnvironmentCommunicator {
     ) {
         super(env);
         this.command_prefix = "KERNEL";
+
     }
 
     get_plugin(plugin_ident: Json): Promise<Result<Address, Error>> {

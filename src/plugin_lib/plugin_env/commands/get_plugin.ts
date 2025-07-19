@@ -31,6 +31,7 @@ export default function (PEC: typeof PluginEnvironment) {
                 );
 
                 const handler = yield* handlerE;
+
                 const responseData = handler.protocol_data;
                 const pluginAddress = yield* Schema.decodeUnknown(Address.AddressFromString)(responseData);
 

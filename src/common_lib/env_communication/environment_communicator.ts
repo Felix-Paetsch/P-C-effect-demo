@@ -1,9 +1,11 @@
 import { Effect } from "effect";
 import { Address } from "../../../messaging/src/base/address";
 import { Environment, EnvironmentT } from "../../../messaging/src/base/environment";
+import { Middleware } from "../../../messaging/src/base/middleware";
+import { PartitionMiddlewareKeys } from "../../../messaging/src/middleware/partition";
 import { ProtocolError, ProtocolErrorN } from "../../../messaging/src/protocols/base/protocol_errors";
 import { Json } from "../../../messaging/src/utils/json";
-import { runEffectAsPromise } from "../../../messaging/src/utils/run";
+import { registerDefaultEnvironmentMiddleware } from "./default_middleware";
 import { EnvironmentCommunicationHandler } from "./EnvironmentCommunicationHandler";
 import { EnvironmentCommunicationProtocol } from "./protocol";
 
@@ -19,17 +21,28 @@ export abstract class EnvironmentCommunicator {
         }
     }>();
 
-    private protocol: EnvironmentCommunicationProtocol;
+    private partitionMiddleware!: Effect.Effect.Success<ReturnType<typeof registerDefaultEnvironmentMiddleware>>;
+    private communication_protocol!: EnvironmentCommunicationProtocol;
 
     constructor(
-        protected env: Environment
+        readonly env: Environment
     ) {
-        this.protocol = new EnvironmentCommunicationProtocol(this);
-        this.protocol.middleware(env).pipe(
-            Effect.andThen(mw => env.useMiddleware(mw)),
-            runEffectAsPromise
-        );
+        Effect.gen(this, function* () {
+            this.partitionMiddleware = yield* registerDefaultEnvironmentMiddleware(env);
+
+            this.communication_protocol = new EnvironmentCommunicationProtocol(this);
+            const mw = yield* this.communication_protocol.middleware(env);
+            this.partitionMiddleware.listeners.push(mw);
+        }).pipe(Effect.runSync);
+
         this.command_prefix = "BOTH";
+    }
+
+    useMiddleware(
+        mw: Middleware,
+        position: PartitionMiddlewareKeys<typeof this.partitionMiddleware>
+    ) {
+        return this.partitionMiddleware[position].push(mw);
     }
 
     _send_command(
@@ -42,7 +55,7 @@ export abstract class EnvironmentCommunicator {
         ProtocolErrorN,
         EnvironmentT
     > {
-        return this.protocol.run_command(target_address, this.command_prefix + "::" + command, data, timeout);
+        return this.communication_protocol.run_command(target_address, this.command_prefix + "::" + command, data, timeout);
     }
 
     _receive_command(

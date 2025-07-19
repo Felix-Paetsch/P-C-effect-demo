@@ -1,8 +1,9 @@
+import { Effect } from "effect";
 import { Address } from "../../../messaging/src/base/address";
 import { Environment } from "../../../messaging/src/base/environment";
 import { EnvironmentCommunicator } from "../../common_lib/env_communication/environment_communicator";
+import { MPOCommunication } from "../message_partners/base/mpo_commands/mpo_communication/protocol";
 import applyGetPluginPrototypeModifier from "./commands/get_plugin";
-
 
 export class PluginEnvironment extends EnvironmentCommunicator {
     constructor(
@@ -12,6 +13,11 @@ export class PluginEnvironment extends EnvironmentCommunicator {
     ) {
         super(env);
         this.command_prefix = "PLUGIN";
+
+        Effect.gen(this, function* () {
+            const mw = yield* MPOCommunication.middleware(env);
+            this.useMiddleware(mw, "listeners");
+        }).pipe(Effect.runSync);
     }
 }
 
