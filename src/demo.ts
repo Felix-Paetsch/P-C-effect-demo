@@ -61,7 +61,6 @@ const side_address = new LocalAddress("side");
 
 class KernelImpl extends KernelEnvironment {
     async get_plugin(plugin_ident: Json) {
-        console.log("GET PLUGIN", plugin_ident);
         if (plugin_ident === "side") {
             await runLocalPlugin(side_plugin, side_address);
             return {
